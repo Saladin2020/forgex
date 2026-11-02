@@ -1,0 +1,29 @@
+{
+  "patternId": "PAT-neon-branch-migration",
+  "version": "1.0.0",
+  "status": "candidate",
+  "problem": "Migrations tested only locally break prod data",
+  "approach": "Run every migration on a Neon branch copied from prod before merge",
+  "expectedBenefit": "Catch data-dependent failures pre-merge",
+  "applicability": [
+    "Neon Postgres",
+    "schema migrations"
+  ],
+  "nonApplicability": [
+    "Non-Neon databases"
+  ],
+  "evidence": [
+    {
+      "taskId": "add-col-042",
+      "outcome": "Caught NOT NULL failure on existing rows"
+    }
+  ],
+  "provenance": "FORGEX v2 example",
+  "knownTradeoffs": [
+    "Branch compute cost"
+  ],
+  "counterexamples": [],
+  "reviewTrigger": "Neon branching pricing/API change",
+  "createdAt": "2026-10-17",
+  "updatedAt": "2026-10-17"
+}

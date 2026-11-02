@@ -1,0 +1,18 @@
+{
+  "contractVersion": "2.2",
+  "taskId": "typo-fix-002",
+  "mode": "QUICK",
+  "riskLevel": "low",
+  "goal": "Fix typo in footer",
+  "touchedPaths": [
+    "app/Footer.tsx"
+  ],
+  "checks": [
+    {
+      "cmd": "npm run lint",
+      "status": "NOT_RUN",
+      "reason": "not run yet"
+    }
+  ],
+  "status": "planned"
+}

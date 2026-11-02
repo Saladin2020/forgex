@@ -1,0 +1,18 @@
+{
+  "name": "forgex",
+  "displayName": "FORGEX",
+  "description": "Lean AI engineering workflow: Blueprint, Build, Verify, Budget with risk modes, task contracts, and truthful evidence.",
+  "version": "2.0.0",
+  "author": {
+    "name": "FORGEX contributors"
+  },
+  "keywords": [
+    "workflow",
+    "engineering",
+    "nextjs",
+    "vercel",
+    "neon",
+    "multi-agent"
+  ],
+  "license": "MIT"
+}

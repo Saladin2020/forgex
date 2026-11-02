@@ -1,0 +1,11 @@
+#!/bin/sh
+# FORGEX optional pre-commit: validate staged forgex/tasks/*.json (fast; no network).
+# Install: git config core.hooksPath <forgex>/tools/hooks   (or copy to .git/hooks/pre-commit)
+# Skip once: git commit --no-verify
+FILES=$(git diff --cached --name-only --diff-filter=ACM -- 'forgex/tasks/*.json')
+[ -z "$FILES" ] && exit 0
+VALIDATOR=${FORGEX_VALIDATOR:-tools/validate.mjs}
+command -v node >/dev/null 2>&1 || { echo "forgex: node not found, skipping (NOT_RUN)"; exit 0; }
+[ -f "$VALIDATOR" ] || { echo "forgex: $VALIDATOR not found, set FORGEX_VALIDATOR (NOT_RUN)"; exit 0; }
+# shellcheck disable=SC2086
+node "$VALIDATOR" $FILES || { echo "forgex: contract validation failed"; exit 1; }

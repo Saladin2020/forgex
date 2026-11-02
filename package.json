@@ -1,0 +1,16 @@
+{
+  "name": "forgex",
+  "version": "2.4.0",
+  "private": true,
+  "type": "module",
+  "description": "FORGEX v2: lean AI engineering workflow, packaged for Cursor and Grok Bot",
+  "scripts": {
+    "validate": "node tools/validate.mjs",
+    "build": "python3 tools/build.py && node tools/validate.mjs --dist"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "license": "MIT"
+}

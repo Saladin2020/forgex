@@ -1,0 +1,47 @@
+{
+  "contractVersion": "2.2",
+  "taskId": "s-001",
+  "mode": "STANDARD",
+  "riskLevel": "medium",
+  "goal": "Add filter",
+  "touchedPaths": [
+    "lib/f.ts"
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "cmd": "npm test",
+      "status": "NOT_RUN",
+      "reason": "not run yet"
+    }
+  ],
+  "status": "planned",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "criterion": "400 on bad value",
+      "status": "NOT_RUN",
+      "checks": []
+    }
+  ],
+  "blocks": [
+    {
+      "name": "parse (seed)",
+      "interface": "",
+      "checks": []
+    },
+    {
+      "name": "api",
+      "interface": "",
+      "checks": []
+    },
+    {
+      "name": "ui",
+      "interface": "",
+      "checks": []
+    }
+  ],
+  "git": {
+    "branch": "forgex/s-001"
+  }
+}

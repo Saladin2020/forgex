@@ -1,0 +1,41 @@
+{
+  "contractVersion": "2.2",
+  "taskId": "g-001",
+  "mode": "GUARDED",
+  "riskLevel": "high",
+  "goal": "Add column",
+  "touchedPaths": [
+    "db/migrations/0001.sql"
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "cmd": "npm run db:migrate",
+      "status": "NOT_RUN",
+      "reason": "not run yet"
+    }
+  ],
+  "status": "planned",
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "criterion": "TODO: observable criterion",
+      "status": "NOT_RUN",
+      "checks": []
+    }
+  ],
+  "nonGoals": [],
+  "constraints": [
+    "Preserve user changes"
+  ],
+  "git": {
+    "branch": "forgex/g-001",
+    "baseCommit": "341a4c9"
+  },
+  "deployment": {
+    "rollbackRunbook": "guides/runbooks.md#TODO"
+  },
+  "budget": {
+    "source": "unavailable"
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "contractVersion": "2.2",
+  "taskId": "add-col-042",
+  "mode": "GUARDED",
+  "riskLevel": "high",
+  "goal": "Add nullable discount column",
+  "touchedPaths": [
+    "db/migrations/0042_discount.sql",
+    "db/migrations/0042_discount.down.sql",
+    "lib/orders.ts"
+  ],
+  "nonGoals": [
+    "backfill"
+  ],
+  "constraints": [
+    "Expand/contract only"
+  ],
+  "git": {
+    "branch": "forgex/add-col-042",
+    "baseCommit": "a1b2c3d"
+  },
+  "deployment": {
+    "neonBranch": "forgex-add-col-042",
+    "previewUrl": "https://shop-git-forgex-add-col-042.vercel.app",
+    "rollbackRunbook": "guides/runbooks.md#rb-2-neon-migration"
+  },
+  "checks": [
+    {
+      "id": "C1",
+      "kind": "command",
+      "cmd": "npm run db:migrate  # Neon branch forgex-add-col-042",
+      "status": "PASS"
+    },
+    {
+      "id": "C2",
+      "kind": "command",
+      "cmd": "npm run db:rollback  # same branch",
+      "status": "PASS"
+    },
+    {
+      "id": "C3",
+      "kind": "preview-deploy",
+      "cmd": "https://shop-git-forgex-add-col-042.vercel.app/orders",
+      "status": "PASS"
+    },
+    {
+      "id": "C4",
+      "kind": "ci",
+      "cmd": "forgex.yml validate + gitleaks",
+      "status": "PASS"
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "criterion": "Migration applies on Neon branch",
+      "status": "PASS",
+      "checks": [
+        "C1"
+      ]
+    },
+    {
+      "id": "AC-2",
+      "criterion": "Down migration restores schema",
+      "status": "PASS",
+      "checks": [
+        "C2"
+      ]
+    },
+    {
+      "id": "AC-3",
+      "criterion": "Orders page renders with null discount",
+      "status": "PASS",
+      "checks": [
+        "C3"
+      ]
+    }
+  ],
+  "status": "completed",
+  "pattern": "migration adds column -> nullable first, backfill later"
+}

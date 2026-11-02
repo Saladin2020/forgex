@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgex.local/schemas/v2.2/task-contract.schema.json",
+  "title": "FORGEX Task Contract v2.2 (tiered: QUICK / STANDARD / GUARDED)",
+  "description": "One schema with three tiers selected by `mode`. Cross-field checks that JSON Schema cannot express (check-id references and touchedPaths against policy.guardedGlobs) are in tools/validate.mjs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "taskId", "mode", "riskLevel", "goal", "checks", "status", "touchedPaths"],
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+    "text": { "type": "string", "pattern": "\\S" },
+    "st": { "enum": ["PASS", "FAIL", "BLOCKED", "NOT_RUN", "NOT_APPLICABLE"] },
+    "gate": { "type": "object", "additionalProperties": false, "required": ["status"],
+      "properties": { "status": { "$ref": "#/$defs/st" }, "decidedBy": { "$ref": "#/$defs/text" }, "note": { "type": "string" } } }
+  },
+  "properties": {
+    "contractVersion": { "const": "2.2" },
+    "taskId": { "$ref": "#/$defs/id" },
+    "parentTaskId": { "$ref": "#/$defs/id" },
+    "mode": { "enum": ["QUICK", "STANDARD", "GUARDED"] },
+    "riskLevel": { "enum": ["low", "medium", "high", "critical"] },
+    "goal": { "$ref": "#/$defs/text" },
+    "status": { "enum": ["planned", "in_progress", "submitted", "completed", "blocked", "failed"] },
+    "touchedPaths": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/text" }, "description": "Planned, then actual, repo-relative paths. Checked against guardedGlobs." },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["cmd", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^C[0-9]+$" },
+          "cmd": { "$ref": "#/$defs/text", "description": "Exact command, or URL for preview checks." },
+          "status": { "$ref": "#/$defs/st" },
+          "kind": { "enum": ["test", "command", "typecheck", "build", "inspection", "manual", "preview-deploy", "ci", "seam"] },
+          "reason": { "type": "string" },
+          "details": { "type": "string" },
+          "recordedBy": { "type": "string" }
+        },
+        "if": { "properties": { "status": { "enum": ["NOT_RUN", "NOT_APPLICABLE", "BLOCKED"] } } },
+        "then": { "required": ["reason"], "properties": { "reason": { "$ref": "#/$defs/text" } } }
+      }
+    },
+    "result": { "type": "string" },
+    "pattern": { "type": "string", "maxLength": 200, "description": "At most one candidate pattern line." },
+    "nonGoals": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+    "blocks": {
+      "type": "array",
+      "items": { "type": "object", "additionalProperties": false, "required": ["name"],
+        "properties": { "name": { "$ref": "#/$defs/text" }, "interface": { "type": "string" }, "checks": { "type": "array", "items": { "type": "string", "pattern": "^C[0-9]+$" } } } }
+    },
+    "acceptanceCriteria": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["id", "criterion", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^AC-[0-9]+$" },
+          "criterion": { "$ref": "#/$defs/text" },
+          "status": { "$ref": "#/$defs/st" },
+          "checks": { "type": "array", "items": { "type": "string", "pattern": "^C[0-9]+$" }, "description": "Evidence mapping: ids of checks that prove this AC." },
+          "rationale": { "type": "string" }
+        },
+        "allOf": [
+          { "if": { "properties": { "status": { "const": "NOT_APPLICABLE" } } }, "then": { "required": ["rationale"], "properties": { "rationale": { "$ref": "#/$defs/text" } } } },
+          { "if": { "properties": { "status": { "const": "PASS" } } }, "then": { "required": ["checks"], "properties": { "checks": { "minItems": 1 } } } }
+        ]
+      }
+    },
+    "constraints": { "type": "array", "items": { "$ref": "#/$defs/text" } },
+    "handoff": { "type": "object", "additionalProperties": false, "required": ["role", "lead"],
+      "properties": { "role": { "enum": ["lead", "worker"] }, "lead": { "$ref": "#/$defs/text" }, "assignee": { "type": "string" }, "returnTo": { "type": "string" }, "fileLocks": { "type": "array", "items": { "type": "string" } } } },
+    "git": { "type": "object", "additionalProperties": false,
+      "properties": { "branch": { "type": "string", "pattern": "^forgex/[A-Za-z0-9._/-]+$" }, "baseCommit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" }, "pullRequest": { "type": "string" } } },
+    "deployment": { "type": "object", "additionalProperties": false,
+      "properties": { "previewUrl": { "type": "string", "pattern": "^https://" }, "neonBranch": { "type": "string" }, "rollbackRunbook": { "type": "string" } } },
+    "gates": { "type": "object", "additionalProperties": false,
+      "properties": { "G0": { "$ref": "#/$defs/gate" }, "G1": { "$ref": "#/$defs/gate" }, "G2": { "$ref": "#/$defs/gate" }, "G3": { "$ref": "#/$defs/gate" }, "G4": { "$ref": "#/$defs/gate" }, "G5": { "$ref": "#/$defs/gate" } } },
+    "budget": { "type": "object", "additionalProperties": false, "required": ["source"],
+      "properties": { "source": { "enum": ["measured", "estimated", "unavailable"] }, "tokensIn": { "type": "integer", "minimum": 0 }, "tokensOut": { "type": "integer", "minimum": 0 },
+        "toolCalls": { "type": "integer", "minimum": 0 }, "attempts": { "type": "integer", "minimum": 1 }, "limitTokens": { "type": "integer", "minimum": 0 } },
+      "if": { "properties": { "source": { "enum": ["measured", "estimated"] } } }, "then": { "required": ["tokensIn", "tokensOut", "attempts"] } },
+    "discoveries": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["class", "note"],
+      "properties": { "class": { "enum": ["REQUIRED", "OPPORTUNITY", "FUTURE"] }, "note": { "$ref": "#/$defs/text" } } } },
+    "unresolvedIssues": { "type": "array", "items": { "type": "string" } }
+  },
+  "allOf": [
+    { "$comment": "R1 (all tiers): high/critical => GUARDED", "if": { "properties": { "riskLevel": { "enum": ["high", "critical"] } } }, "then": { "properties": { "mode": { "const": "GUARDED" } } } },
+    { "$comment": "R2 (all tiers): medium => not QUICK", "if": { "properties": { "riskLevel": { "const": "medium" } } }, "then": { "properties": { "mode": { "enum": ["STANDARD", "GUARDED"] } } } },
+    { "$comment": "QUICK completed: >=1 PASS check, no FAIL/BLOCKED", "if": { "properties": { "mode": { "const": "QUICK" }, "status": { "const": "completed" } } },
+      "then": { "properties": { "checks": { "minItems": 1, "contains": { "properties": { "status": { "const": "PASS" } } }, "items": { "properties": { "status": { "enum": ["PASS", "NOT_RUN", "NOT_APPLICABLE"] } } } } } } },
+    { "$comment": "STANDARD + GUARDED: AC list required", "if": { "properties": { "mode": { "enum": ["STANDARD", "GUARDED"] } } }, "then": { "required": ["acceptanceCriteria"] } },
+    { "$comment": "STANDARD/GUARDED completed: every AC PASS/NA, >=1 PASS, no failing check", "if": { "properties": { "mode": { "enum": ["STANDARD", "GUARDED"] }, "status": { "const": "completed" } } },
+      "then": { "properties": {
+        "acceptanceCriteria": { "items": { "properties": { "status": { "enum": ["PASS", "NOT_APPLICABLE"] } } }, "contains": { "properties": { "status": { "const": "PASS" } } } },
+        "checks": { "minItems": 1, "items": { "required": ["id"], "properties": { "status": { "enum": ["PASS", "NOT_RUN", "NOT_APPLICABLE"] } } } } } } },
+    { "$comment": "GUARDED full rules", "if": { "properties": { "mode": { "const": "GUARDED" } } }, "then": { "required": ["constraints", "nonGoals", "git"] } },
+    { "$comment": "R3 GUARDED completed needs budget", "if": { "properties": { "mode": { "const": "GUARDED" }, "status": { "const": "completed" } } }, "then": { "required": ["budget"] } },
+    { "$comment": "R5 GUARDED past planning needs rollback runbook", "if": { "properties": { "mode": { "const": "GUARDED" }, "status": { "enum": ["in_progress", "submitted", "completed"] } } },
+      "then": { "required": ["deployment"], "properties": { "deployment": { "required": ["rollbackRunbook"] } } } },
+    { "$comment": "R4 worker never completes", "if": { "required": ["handoff"], "properties": { "handoff": { "properties": { "role": { "const": "worker" } } } } },
+      "then": { "required": ["parentTaskId"], "properties": { "status": { "not": { "const": "completed" } }, "gates": { "properties": { "G4": false, "G5": false } } } } }
+  ]
+}

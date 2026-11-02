@@ -1,0 +1,12 @@
+{
+  "$schema": "../schemas/policy.schema.json",
+  "version": "2.2.0",
+  "fallbackMode": "STANDARD",
+  "riskModeMapping": { "low": "QUICK", "medium": "STANDARD", "high": "GUARDED", "critical": "GUARDED" },
+  "agents": { "defaultCount": 1, "multiAgent": "off", "maxWorkers": 0, "finalGateOwner": "lead" },
+  "scopePolicy": { "autoImplement": ["REQUIRED"] },
+  "evidenceStatuses": ["PASS", "FAIL", "BLOCKED", "NOT_RUN", "NOT_APPLICABLE"],
+  "safety": { "preserveUserChanges": true, "requireAuthorizationForDestructiveActions": true, "claimOnlyObservedVerification": true, "secretScanning": "gitleaks" },
+  "budget": { "metric": "tokens_per_successful_task", "defaultLimitTokens": { "QUICK": 30000, "STANDARD": 150000, "GUARDED": 300000 }, "maxAttemptsBeforeReplan": 3 },
+  "guardedGlobs": ["**/migrations/**", "**/auth/**", "**/.env*", "**/middleware.ts", "**/vercel.json", "**/drizzle.config.*", "**/prisma/schema.prisma"]
+}

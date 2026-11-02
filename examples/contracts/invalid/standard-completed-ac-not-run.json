@@ -1,0 +1,82 @@
+{
+  "contractVersion": "2.2",
+  "taskId": "orders-filter-010",
+  "mode": "STANDARD",
+  "riskLevel": "medium",
+  "goal": "Add status filter to orders list",
+  "touchedPaths": [
+    "lib/status.ts",
+    "app/api/orders/route.ts",
+    "app/orders/Filter.tsx"
+  ],
+  "blocks": [
+    {
+      "name": "parseStatus (seed)",
+      "interface": "?status= -> Status|null",
+      "checks": [
+        "C1"
+      ]
+    },
+    {
+      "name": "API filter",
+      "interface": "GET /api/orders?status -> Order[] | 400",
+      "checks": [
+        "C2"
+      ]
+    },
+    {
+      "name": "UI dropdown",
+      "checks": [
+        "C4"
+      ]
+    }
+  ],
+  "checks": [
+    {
+      "id": "C1",
+      "kind": "test",
+      "cmd": "npm test -- status",
+      "status": "PASS"
+    },
+    {
+      "id": "C2",
+      "kind": "test",
+      "cmd": "npm test -- orders.route",
+      "status": "PASS"
+    },
+    {
+      "id": "C3",
+      "kind": "seam",
+      "cmd": "npx tsc --noEmit",
+      "status": "PASS"
+    },
+    {
+      "id": "C4",
+      "kind": "preview-deploy",
+      "cmd": "https://shop-git-forgex-orders-filter-010.vercel.app/orders?status=paid",
+      "status": "PASS"
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "id": "AC-1",
+      "criterion": "Invalid status returns 400",
+      "status": "NOT_RUN",
+      "checks": [
+        "C2"
+      ]
+    },
+    {
+      "id": "AC-2",
+      "criterion": "Dropdown filters list",
+      "status": "PASS",
+      "checks": [
+        "C3",
+        "C4"
+      ]
+    }
+  ],
+  "status": "completed",
+  "result": "Filter works on preview",
+  "pattern": "list filter -> parse query param in lib, share type with API"
+}

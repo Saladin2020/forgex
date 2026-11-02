@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgex.local/schemas/v2/policy.schema.json",
+  "title": "FORGEX Policy v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "fallbackMode", "riskModeMapping", "agents", "scopePolicy", "evidenceStatuses", "safety", "budget", "guardedGlobs"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "fallbackMode": { "enum": ["STANDARD", "GUARDED"], "description": "Mode used ONLY when risk cannot be assessed yet. Never QUICK. Once risk is assessed, riskModeMapping wins." },
+    "riskModeMapping": {
+      "type": "object", "additionalProperties": false, "required": ["low", "medium", "high", "critical"],
+      "properties": {
+        "low": { "enum": ["QUICK", "STANDARD", "GUARDED"] },
+        "medium": { "enum": ["STANDARD", "GUARDED"] },
+        "high": { "const": "GUARDED" },
+        "critical": { "const": "GUARDED" }
+      }
+    },
+    "agents": {
+      "type": "object", "additionalProperties": false, "required": ["defaultCount", "multiAgent"],
+      "properties": {
+        "defaultCount": { "type": "integer", "minimum": 1 },
+        "multiAgent": { "enum": ["off", "lead-worker"] },
+        "maxWorkers": { "type": "integer", "minimum": 0 },
+        "finalGateOwner": { "const": "lead" }
+      }
+    },
+    "scopePolicy": {
+      "type": "object", "additionalProperties": false, "required": ["autoImplement"],
+      "properties": { "autoImplement": { "type": "array", "items": { "const": "REQUIRED" }, "maxItems": 1 } }
+    },
+    "evidenceStatuses": { "const": ["PASS", "FAIL", "BLOCKED", "NOT_RUN", "NOT_APPLICABLE"] },
+    "safety": {
+      "type": "object", "additionalProperties": false,
+      "required": ["preserveUserChanges", "requireAuthorizationForDestructiveActions", "claimOnlyObservedVerification"],
+      "properties": {
+        "preserveUserChanges": { "const": true },
+        "requireAuthorizationForDestructiveActions": { "const": true },
+        "claimOnlyObservedVerification": { "const": true },
+        "secretScanning": { "enum": ["gitleaks", "none"] }
+      }
+    },
+    "budget": {
+      "type": "object", "additionalProperties": false, "required": ["metric", "defaultLimitTokens"],
+      "properties": {
+        "metric": { "const": "tokens_per_successful_task" },
+        "defaultLimitTokens": { "type": "object", "additionalProperties": false, "required": ["QUICK", "STANDARD", "GUARDED"],
+          "properties": { "QUICK": { "type": "integer", "minimum": 0 }, "STANDARD": { "type": "integer", "minimum": 0 }, "GUARDED": { "type": "integer", "minimum": 0 } } },
+        "maxAttemptsBeforeReplan": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "guardedGlobs": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }
+  }
+}

@@ -1,0 +1,33 @@
+name: forgex
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci || npm install --no-audit --no-fund
+      - name: Validate FORGEX schemas, policy, examples
+        run: node tools/validate.mjs
+      - name: Validate project task contracts (if any)
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(forgex/tasks/*.json)
+          if [ ${#files[@]} -eq 0 ]; then echo "no task contracts"; exit 0; fi
+          node tools/validate.mjs "${files[@]}"
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Organization repos need a free license: GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}

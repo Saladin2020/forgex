@@ -1,0 +1,18 @@
+{
+  "contractVersion": "2.2",
+  "taskId": "date-label-001",
+  "mode": "QUICK",
+  "riskLevel": "medium",
+  "goal": "Show compact date label (dd MMM) in OrderRow",
+  "touchedPaths": [
+    "app/orders/OrderRow.tsx"
+  ],
+  "checks": [
+    {
+      "cmd": "npm test -- OrderRow",
+      "status": "PASS"
+    }
+  ],
+  "status": "completed",
+  "result": "Reused formatDate()"
+}
