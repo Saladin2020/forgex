@@ -16,6 +16,7 @@ const ajv = new Ajv2020({ allErrors: true, strict: false }); addFormats(ajv);
 const task = ajv.compile(rd("schemas/task-contract.schema.json"));
 const policy = ajv.compile(rd("schemas/policy.schema.json"));
 const pattern = ajv.compile(rd("schemas/pattern-record.schema.json"));
+const ctxPolicy = ajv.compile(rd("schemas/context-policy.schema.json"));
 let failures = 0;
 const ok = (m) => console.log(`  PASS  ${m}`);
 const bad = (m, e) => { failures++; console.log(`  FAIL  ${m}`); if (e) console.log("        " + JSON.stringify(e).slice(0, 400)); };
@@ -98,6 +99,7 @@ for (const [risk, mode] of Object.entries(pol.riskModeMapping)) {
   const probe = { contractVersion: "2.2", taskId: "probe", goal: "p", touchedPaths: ["src/x.ts"], checks: [], constraints: ["c"], nonGoals: [], git: {}, acceptanceCriteria: [{ id: "AC-1", criterion: "c", status: "NOT_RUN" }], riskLevel: risk, mode, status: "planned" };
   task(probe) ? ok(`policy mapping ${risk}->${mode} accepted by task schema`) : bad(`policy mapping ${risk}->${mode} conflicts with schema`, errs(task));
 }
+console.log("Context policy:"); { const cp = rd("config/context-policy.json"); ctxPolicy(cp) ? ok("config/context-policy.json valid") : bad("context-policy", errs(ctxPolicy)); const b = cp.budgets; b.QUICK < b.STANDARD && b.STANDARD < b.GUARDED ? ok(`budgets ${b.QUICK} < ${b.STANDARD} < ${b.GUARDED}`) : bad("budgets must grow QUICK < STANDARD < GUARDED"); }
 console.log("Glob self-test:");
 for (const [p, want] of [["db/migrations/1.sql", true], ["migrations/1.sql", true], ["app/auth/x.ts", true], [".env.local", true], ["apps/web/.env", true], ["app/orders/Row.tsx", false], ["src/authz.ts", false]]) { const hit = GUARDED_RE.some(([, re]) => re.test(p)); hit === want ? ok(`${p} guarded=${hit}`) : bad(`${p} guarded=${hit} expected ${want}`); }
 console.log("Scaffold stubs:"); { const st = ls("examples/stubs"); st.length >= 3 ? ok(`${st.length} stubs present`) : bad("expected >=3 scaffold stubs in examples/stubs"); st.forEach((f) => expect(task, f, true)); }
@@ -110,7 +112,7 @@ if (process.argv.includes("--dist")) {
   console.log("Dist:");
   const ver = JSON.parse(fs.readFileSync(path.join(ROOT, "package.json"), "utf8")).version;
   const a7 = new Ajv7({ allErrors: true, strict: false }); addFormats(a7); const manifestSchema = a7.compile(rd("tools/vendor/cursor-plugin.schema.json"));
-  for (const pkg of fs.readdirSync(path.join(ROOT, "dist"))) {
+  for (const pkg of fs.readdirSync(path.join(ROOT, "dist")).filter((d) => d !== "public-repo" && !d.startsWith("_"))) {
     const base = path.join(ROOT, "dist", pkg), cur = path.join(base, "forgex-cursor-plugin");
     const man = JSON.parse(fs.readFileSync(path.join(cur, ".cursor-plugin/plugin.json"), "utf8"));
     manifestSchema(man) ? ok(`${pkg}: plugin.json matches cursor/plugins schema`) : bad(`${pkg} plugin.json`, manifestSchema.errors);

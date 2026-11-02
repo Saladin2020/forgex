@@ -1,0 +1,31 @@
+{
+  "$schema": "../schemas/context-policy.schema.json",
+  "version": "2.5.0",
+  "estimate": "chars/4",
+  "budgets": { "QUICK": 1200, "STANDARD": 3500, "GUARDED": 7000 },
+  "always": ["forgex/STATE.md"],
+  "priority": ["state", "decisions", "cards", "codemap", "golden"],
+  "maxCards": { "QUICK": 1, "STANDARD": 3, "GUARDED": 4 },
+  "areas": [
+    { "area": "auth", "keywords": ["login", "logout", "auth", "password", "session", "signin", "sign in", "signup", "2fa", "totp", "otp"], "paths": ["**/auth/**", "**/auth*.ts", "**/session*", "**/password*", "**/middleware.ts"] },
+    { "area": "money", "keywords": ["money", "payment", "pay", "loan", "promptpay", "baht", "fee", "split", "refund", "invoice"], "paths": ["**/payment*/**", "**/money*", "**/loan*/**"] },
+    { "area": "db", "keywords": ["migration", "migrate", "schema", "table", "column", "drizzle", "database", "sql", "backup"], "paths": ["**/migrations/**", "**/drizzle/**", "**/schema.ts", "**/db/**"] },
+    { "area": "approval", "keywords": ["approve", "approval", "maker", "checker", "review"], "paths": ["**/approval*/**"] },
+    { "area": "pdf", "keywords": ["pdf", "receipt", "report", "print"], "paths": ["**/pdf/**", "**/*pdf*"] },
+    { "area": "notify", "keywords": ["push", "notification", "notify", "reminder"], "paths": ["**/push/**", "**/notif*/**", "**/sw.js"] },
+    { "area": "jobs", "keywords": ["cron", "daily", "schedule", "job"], "paths": ["**/cron/**", "**/vercel.json"] },
+    { "area": "ui", "keywords": ["css", "style", "color", "colour", "button", "layout", "padding", "margin", "font", "spacing", "theme", "ui"], "paths": ["**/*.css", "**/components/**", "**/tailwind.config.*"] },
+    { "area": "upload", "keywords": ["upload", "image", "photo", "file"], "paths": ["**/upload*/**"] },
+    { "area": "address", "keywords": ["address", "province", "zip", "postcode"], "paths": [] },
+    { "area": "api", "keywords": ["api", "endpoint", "route"], "paths": ["**/api/**"] },
+    { "area": "security", "keywords": ["rate limit", "abuse", "brute", "idempot", "replay", "audit"], "paths": [] }
+  ],
+  "goldenByKind": {
+    "form-page": ["**/page.tsx", "**/*form*.tsx"],
+    "api-route": ["**/api/**/route.ts"],
+    "server-action": ["**/actions/**", "**/*action*.ts"],
+    "test": ["**/*.test.*", "**/*.spec.*", "tests/**", "e2e/**"]
+  },
+  "skip": ["**/node_modules/**", "**/dist/**", "**/.next/**", "forgex/tasks/**", "**/*.lock", "**/package-lock.json"],
+  "skipKinds": { "QUICK": ["golden"] }
+}

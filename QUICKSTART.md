@@ -19,7 +19,7 @@ No kit yet? Skip this; the agent falls back to the blank template and asks.
 Tell the agent: "start a new web app with FORGEX". It copies the kit profile into `AGENTS.md`, picks a look into `DESIGN.md`, runs `context.py init` + `codemap.py`, then opens only the block cards and golden examples it needs.
 
 ## 4. Every session
-- Start: agent reads `forgex/STATE.md` and `forgex/CODEMAP.md`.
+- Start: agent runs `ctxpack.py "<task>" --path <file>` and reads only `forgex/context-pack.md` (capped: QUICK ~1.2k, STANDARD ~3.5k, GUARDED ~7k est. tokens). Tune with `forgex/context-policy.json`.
 - End or handoff: agent rewrites `STATE.md`, logs choices with `context.py decide`, refreshes `codemap.py`.
 
 ## 5. Harvest patterns (end of each project)

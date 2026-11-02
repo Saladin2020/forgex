@@ -1,4 +1,4 @@
-# FORGEX v2.4: Lean AI Engineering System
+# FORGEX v2.5: Lean AI Engineering System
 
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 

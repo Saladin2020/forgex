@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://forgex.local/schemas/v2/context-policy.schema.json",
+  "title": "FORGEX Context Policy v2.5",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "budgets", "always", "priority", "areas"],
+  "$defs": {
+    "modes": { "type": "object", "additionalProperties": false, "required": ["QUICK", "STANDARD", "GUARDED"],
+      "properties": { "QUICK": { "type": "integer", "minimum": 100 }, "STANDARD": { "type": "integer", "minimum": 100 }, "GUARDED": { "type": "integer", "minimum": 100 } } },
+    "globs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "kind": { "enum": ["state", "decisions", "cards", "codemap", "golden"] }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "estimate": { "type": "string" },
+    "budgets": { "$ref": "#/$defs/modes", "description": "Estimated-token cap per mode (chars/4). QUICK < STANDARD < GUARDED is checked by the validator." },
+    "always": { "$ref": "#/$defs/globs" },
+    "priority": { "type": "array", "items": { "$ref": "#/$defs/kind" }, "minItems": 1, "uniqueItems": true },
+    "maxCards": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } },
+    "areas": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["area", "keywords", "paths"],
+      "properties": { "area": { "type": "string", "pattern": "^[a-z0-9-]+$" }, "keywords": { "type": "array", "items": { "type": "string" } }, "paths": { "$ref": "#/$defs/globs" } } } },
+    "goldenByKind": { "type": "object", "additionalProperties": { "$ref": "#/$defs/globs" } },
+    "skip": { "$ref": "#/$defs/globs" },
+    "skipKinds": { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/kind" } } }
+  }
+}

@@ -23,9 +23,9 @@ def references(dst: Path, kit: Path | None):
     if kit:
         shutil.copytree(kit, dst / "kit", ignore=shutil.ignore_patterns("private-terms.txt"))
     shutil.copytree(ROOT / "schemas", dst / "schemas")
-    (dst / "config").mkdir(); shutil.copy(ROOT / "config/default-policy.json", dst / "config")
+    (dst / "config").mkdir(); shutil.copy(ROOT / "config/default-policy.json", dst / "config"); shutil.copy(ROOT / "config/context-policy.json", dst / "config")
     (dst / "tools").mkdir()
-    for f in ("validate.mjs", "scaffold.py", "context.py", "codemap.py"): shutil.copy(ROOT / "tools" / f, dst / "tools")
+    for f in ("validate.mjs", "scaffold.py", "context.py", "codemap.py", "ctxpack.py"): shutil.copy(ROOT / "tools" / f, dst / "tools")
     shutil.copytree(ROOT / "extras", dst / "extras")
     shutil.copytree(ROOT / "tools/hooks", dst / "tools/hooks")
     shutil.copytree(ROOT / "tools/vendor", dst / "tools/vendor")
@@ -69,7 +69,9 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--kit"); ap.add_argument("--public-only", action="store_true")
     a = ap.parse_args()
     name = a.kit or json.loads((ROOT / "config/kit.json").read_text()).get("kit")
-    shutil.rmtree(DIST, ignore_errors=True); DIST.mkdir()
+    DIST.mkdir(exist_ok=True)  # keep dist/public-repo (its .git holds publish history)
+    for d in DIST.iterdir():
+        if d.name != "public-repo": shutil.rmtree(d) if d.is_dir() else d.unlink()
     pub = DIST / "public"
     package(pub, None, None)
     zipdir(ROOT, pub / f"FORGEX_v{VERSION}-src.zip", f"FORGEX_v{VERSION}", skip=("node_modules", "dist", ".git", "kits", "kit.json"))
@@ -87,7 +89,7 @@ def main():
         meta = kit / "kit.json"
         author = json.loads(meta.read_text()).get("author") if meta.exists() else None
         package(DIST / f"personal-{name}", kit, author)
-    for d in sorted(DIST.iterdir()): print("built:", d.name, *sorted(p.name for p in d.iterdir()))
+    for d in sorted(x for x in DIST.iterdir() if x.name != "public-repo"): print("built:", d.name, *sorted(p.name for p in d.iterdir()))
 
 if __name__ == "__main__":
     main()

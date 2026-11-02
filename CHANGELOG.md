@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.5.0 (2026-11-02): context orchestration, lean by default
+- `config/context-policy.json` + `schemas/context-policy.schema.json`: task signals (keywords, path globs, mode) → areas → what to load; per-mode caps in est. tokens (QUICK 1200 / STANDARD 3500 / GUARDED 7000), priority order, `maxCards`, skip list, `skipKinds`. Project override `forgex/context-policy.json`.
+- `tools/ctxpack.py`: builds `forgex/context-pack.md` (STATE + matching DECISIONS, cards, CODEMAP sections, golden files), never over the cap, prints loaded/skipped with reasons, `--json` report.
+- Optional `Tags` on kit cards and DECISIONS entries (`context.py decide --tag`); old untagged files still work.
+- `tools/test_ctxpack.py` scenario tests (login → auth only; tiny CSS under QUICK cap; money API picks its core card money-math; cap trimming). Each matched area reserves one card slot for its core card (first tag); `release.py` runs them and tags the local public commit. Validator checks the context policy and budget order.
+- SKILL.md start step uses the pack; FORGEX.md §9; QUICKSTART. Contract schema unchanged.
+
 ## v2.4.0 (2026-11-02): context engineering + shareable kits
 - Context files per project (`forgex/`): `STATE.md` (read at start, rewrite at end/handoff), `DECISIONS.md` (append-only D-n log), `CODEMAP.md` (generated). New `tools/context.py` (`init`, `decide`) and `tools/codemap.py` (git-aware tree + exported symbols, 200-line cap, keeps `## Notes`). Templates in `core/templates/`. Spec §8, SKILL.md CONTEXT section.
 - Golden examples: `golden/` per kit (form-page, api-route, server-action, test) with template.

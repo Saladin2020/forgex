@@ -1,4 +1,4 @@
-# FORGEX v2.4: Canonical Spec
+# FORGEX v2.5: Canonical Spec
 
 **Goal:** work fast, correctly and with few tokens. · Seed first, then grow (from a potted tree to a forest). · Single agent, no heavy QA by default.
 
@@ -67,3 +67,8 @@ The closeout is never written by hand: `scaffold.py render` produces it from the
 | `DECISIONS.md` | append-only log `D-n · date · decision`, why, rejected options | `rg` before changing a settled choice | `context.py decide …`; change = new entry `Supersedes D-n` |
 | `CODEMAP.md` | dirs, files, exported symbols, capped (200 lines) + kept `## Notes` | instead of scanning the repo | `codemap.py` after files move or are added |
 Commit all three. They replace re-explaining the project every chat.
+
+## 9. Context orchestration (lean by default)
+- `config/context-policy.json` (schema `schemas/context-policy.schema.json`; project override `forgex/context-policy.json`) maps task signals (keywords, touched globs, mode) to areas, and areas to what loads: STATE always, DECISIONS entries by `Tags`, kit cards by `Tags` (≤ `maxCards`), CODEMAP sections for touched dirs, golden files by file kind; `skip` globs and `skipKinds` (QUICK skips golden).
+- Caps per mode in estimated tokens (chars/4): QUICK 1200, STANDARD 3500, GUARDED 7000. Priority: state → decisions → cards → codemap → golden. Items that do not fit are skipped and listed with a reason; the pack never exceeds the cap.
+- `ctxpack.py "<task>" --path …` writes `forgex/context-pack.md`. Mode is inferred (auth/money/db or guarded glob → GUARDED; one UI path → QUICK) unless `--mode` is given. Tags are optional (`- **Tags:** a, b` on cards, `- Tags: a` on D-entries; `context.py decide --tag`); untagged entries still match by title words.
