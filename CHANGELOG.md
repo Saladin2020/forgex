@@ -1,5 +1,9 @@
 # Changelog
 
+## v2.6.1 (2026-11-02): A/B bench
+- New `bench/`: A/B kit to test FORGEX vs no FORGEX in Cursor (same starter, model and prompts). Thai README, 6 tasks (QUICK ×1, STANDARD ×2, GUARDED ×3 incl. a new-chat "ทำต่อ" memory test), `tasks/checks.json` objective checks, generic `starter/` (Next.js 16, Tailwind v4, Drizzle/Neon, Auth.js v5, planted money bug), `style.json`, `score.py` (stdlib; grep/exists/style/cmd checks + results.csv metrics → markdown table with a winner per metric), `results-template.csv`.
+- Personal kits may add `bench/style.json` with their own tokens (`score.py --style`).
+
 ## v2.6.0 (2026-11-02): reliability first
 - One risk classifier: `core/risk/rules.json` + `classifier.py` + `classifier.mjs` (shipped as `references/risk/`), used by both `ctxpack.py` and `validate.mjs`. Explicit mode is a floor (never downgraded); guarded globs/areas always escalate to GUARDED; unknown mode/riskLevel → GUARDED; no paths → STANDARD. Guarded globs add payments/billing/money/secrets/keys; project `forgex/policy.json` globs are added. `tools/test_risk.py` checks py/js parity (18 cases).
 - Workflow wiring: always-on rule, SKILL.md and `/forgex-start` run ctxpack before coding, state `context: pack <id> · MODE · used/cap`, and give a manual no-Python fallback.

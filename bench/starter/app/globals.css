@@ -1,0 +1,12 @@
+@import "tailwindcss";
+/* Design tokens: use these, never raw hex in components. */
+:root {
+  --color-bg: #f7f7f8; --color-fg: #1c1c1f; --color-card: #ffffff;
+  --color-border: #e4e4e7; --color-accent: #2563eb; --radius-card: 12px;
+}
+@theme inline {
+  --color-bg: var(--color-bg); --color-fg: var(--color-fg); --color-card: var(--color-card);
+  --color-border: var(--color-border); --color-accent: var(--color-accent);
+}
+body { background: var(--color-bg); color: var(--color-fg); }
+.save-button { padding: 16px 32px; border-radius: var(--radius-card); background: var(--color-accent); color: white; }

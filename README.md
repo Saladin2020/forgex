@@ -18,6 +18,7 @@ core/house/     blank kit template (PROFILE, DESIGN, blocks/, golden/)
 kits/<name>/    filled kits (personal or team); never shipped in the public package
 config/         default-policy.json, kit.example.json (copy to kit.json to pick your kit)
 schemas/ examples/ targets/cursor/ extras/
+bench/          A/B test kit: FORGEX vs no FORGEX (README in Thai, tasks, starter, score.py)
 tools/          scaffold.py, context.py, codemap.py, ctxpack.py, validate.mjs, build.py, release.py, test_*.py, hooks/
 ```
 

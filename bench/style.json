@@ -1,0 +1,6 @@
+{
+  "name": "generic",
+  "tokens": ["--color-bg", "--color-fg", "--color-accent", "--color-card", "--color-border", "--radius-card"],
+  "forbiddenHex": "#[0-9a-fA-F]{6}\\b",
+  "note": "Pages/components must use these CSS variables (or Tailwind classes built from them), not raw hex colors."
+}

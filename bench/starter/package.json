@@ -1,0 +1,8 @@
+{
+  "name": "bench-starter",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "next dev", "build": "next build", "test": "node --test tests/", "typecheck": "tsc --noEmit" },
+  "dependencies": { "next": "^16", "react": "^19", "react-dom": "^19", "next-auth": "^5.0.0-beta", "drizzle-orm": "latest", "@neondatabase/serverless": "latest" },
+  "devDependencies": { "tailwindcss": "^4", "@tailwindcss/postcss": "^4", "typescript": "^5", "drizzle-kit": "latest", "@types/react": "^19", "@types/node": "^22" }
+}
