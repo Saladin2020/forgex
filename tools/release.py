@@ -23,11 +23,12 @@ def run(*cmd, cwd=ROOT):
     print("$", " ".join(cmd)); subprocess.run(cmd, cwd=cwd, check=True)
 
 def main():
-    cfg = json.loads((ROOT / "config/kit.json").read_text()) if (ROOT / "config/kit.json").exists() else {}
+    cfg = json.loads((ROOT / "config/kit.json").read_text(encoding="utf-8")) if (ROOT / "config/kit.json").exists() else {}
     ap = argparse.ArgumentParser(); ap.add_argument("--sync-to", default=cfg.get("syncTo")); ap.add_argument("--no-sync", action="store_true")
     a = ap.parse_args()
     run(sys.executable, "tools/test_risk.py")
     run(sys.executable, "tools/test_ctxpack.py")
+    run(sys.executable, "tools/validate.py", "--self-test")
     run(sys.executable, "tools/build.py")
     run("node", "tools/validate.mjs", "--dist")
     kit = cfg.get("kit")
@@ -44,7 +45,7 @@ def main():
     with zipfile.ZipFile(next((DIST / "public").glob("FORGEX_v*-src.zip"))) as z:
         z.extractall(DIST / "_src")
     inner = next((DIST / "_src").iterdir()); shutil.move(str(inner), repo); shutil.rmtree(DIST / "_src")
-    terms = sorted({t.strip() for f in (ROOT / "kits").glob("*/private-terms.txt") for t in f.read_text().splitlines() if t.strip() and not t.startswith("#")})
+    terms = sorted({t.strip() for f in (ROOT / "kits").glob("*/private-terms.txt") for t in f.read_text(encoding="utf-8").splitlines() if t.strip() and not t.startswith("#")})
     hits = build.scan(repo, terms)
     if hits: print("PRIVACY SCAN FAILED on public-repo:", *hits, sep="\n  "); sys.exit(1)
     print(f"privacy scan: dist/public-repo clean ({len(terms)} terms)")

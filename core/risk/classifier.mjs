@@ -18,7 +18,16 @@ export function globToRegExp(g) {
 export const norm = (p) => String(p).replace(/\\/g, "/").replace(/^(\.\/)+/, "");
 export const guardedHit = (p, globs) => globs.find((g) => globToRegExp(g).test(norm(p))) ?? null;
 const top = (...ms) => ms.reduce((a, b) => (ORDER[b] > ORDER[a] ? b : a));
-export function classify({ mode = null, paths = [], areas = [], risk = null, extraGlobs = [] } = {}) {
+const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const has = (t, k) => /[\u0E01-\u0E59]/.test(k) ? t.includes(k) : new RegExp("(?<![a-z0-9])" + esc(k) + "(?![a-z0-9])").test(t);
+export function writeSignals(task) {
+  const t = String(task || "").toLowerCase();
+  let found = Object.fromEntries(Object.entries(RULES.writeSignals).map(([k, kws]) => [k, kws.filter((x) => has(t, x))]).filter(([, v]) => v.length));
+  const ro = RULES.readOnlySignals.filter((x) => has(t, x));
+  if (ro.length) found = Object.fromEntries(Object.entries(found).filter(([k]) => RULES.readOnlyCannotSuppress.includes(k)));
+  return [found, ro];
+}
+export function classify({ mode = null, paths = [], areas = [], risk = null, extraGlobs = [], task = "" } = {}) {
   const R = RULES, reasons = [], warnings = [];
   const globs = [...new Set([...R.guardedGlobs, ...extraGlobs])];
   paths = (paths || []).map(norm); const A = new Set(areas || []);
@@ -26,7 +35,7 @@ export function classify({ mode = null, paths = [], areas = [], risk = null, ext
   if (!paths.length) { d = R.noPathsMode; warnings.push(`no paths given: at least ${d}`); }
   else if (paths.length <= R.quickMaxPaths && A.size && [...A].every((a) => R.quickAreas.includes(a))) d = "QUICK";
   else d = "STANDARD";
-  let hard = "QUICK"; // floor from hard signals only; the heuristic above never overrides an explicit mode
+  let hard = "QUICK";
   if (risk !== null && risk !== undefined) {
     let rm = R.riskModeMapping[risk];
     if (!rm) { warnings.push(`unknown riskLevel '${risk}': ${R.unknownMode}`); rm = R.unknownMode; }
@@ -34,12 +43,14 @@ export function classify({ mode = null, paths = [], areas = [], risk = null, ext
     d = top(d, rm); hard = top(hard, rm);
   }
   for (const p of paths) { const g = guardedHit(p, globs); if (g) { reasons.push(`path ${p} matches guarded glob ${g}`); d = hard = "GUARDED"; } }
-  for (const a of [...A].filter((x) => R.guardedAreas.includes(x)).sort()) { reasons.push(`guarded area ${a}`); d = hard = "GUARDED"; }
+  const [writes, ro] = writeSignals(task);
+  for (const k of Object.keys(writes).sort()) { reasons.push(`${k} (${writes[k].slice(0, 3).join(", ")})`); d = hard = "GUARDED"; }
+  if (ro.length && !Object.keys(writes).length && hard !== "GUARDED" && ["auth", "money", "db"].some((x) => A.has(x))) reasons.push(`read-only (${ro.slice(0, 2).join(", ")}): no escalation`);
   let final = d;
   if (mode !== null && mode !== undefined) {
     if (!(mode in ORDER)) { warnings.push(`unknown mode '${mode}': ${R.unknownMode}`); mode = R.unknownMode; }
     final = top(mode, hard);
     reasons.push(final !== mode ? `explicit ${mode} escalated to ${final}` : `explicit ${mode} kept`);
   }
-  return { mode: final, derived: d, reasons, warnings };
+  return { mode: final, derived: d, reasons, warnings, writes: Object.keys(writes).sort() };
 }

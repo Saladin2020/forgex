@@ -1,9 +1,16 @@
 {
-  "version": "2.6.0",
+  "version": "2.7.0",
   "modes": ["QUICK", "STANDARD", "GUARDED"],
-  "guardedGlobs": ["**/migrations/**", "**/auth/**", "**/.env*", "**/middleware.ts", "**/vercel.json", "**/drizzle.config.*", "**/prisma/schema.prisma",
-                   "**/payment*/**", "**/billing/**", "**/money/**", "**/secrets/**", "**/*secret*", "**/*.pem", "**/*.key"],
-  "guardedAreas": ["auth", "money", "db"],
+  "guardedGlobs": ["**/migrations/**", "**/drizzle/**/*.sql", "**/db/schema.ts", "**/schema.prisma", "**/drizzle.config.*",
+                   "**/auth/**", "**/auth.ts", "**/auth.config.ts", "**/middleware.ts", "**/.env*", "**/vercel.json",
+                   "**/secrets/**", "**/*secret*", "**/*.pem", "**/*.key"],
+  "writeSignals": {
+    "money-write": ["transfer", "approve", "approval", "reject", "maker", "checker", "withdraw", "deposit", "refund", "debit", "credit", "ledger", "payout", "repayment", "payment", "charge", "post to", "balance update", "โอน", "อนุมัติ", "ปฏิเสธ", "ถอน", "ฝาก", "ลงบัญชี", "คืนเงิน", "ตัดยอด"],
+    "schema-change": ["migration", "migrate", "schema change", "change schema", "change the schema", "update schema", "แก้ schema", "แก้สคีมา", "add column", "add table", "new table", "alter table", "drop", "เพิ่มตาราง", "เพิ่มคอลัมน์", "แก้ตาราง"],
+    "authz-change": ["login", "logout", "signin", "sign in", "signup", "sign up", "password", "2fa", "totp", "otp", "permission", "role", "authz", "authorize", "session", "ล็อกอิน", "รหัสผ่าน", "สิทธิ์", "เข้าสู่ระบบ"]
+  },
+  "readOnlySignals": ["show", "display", "list", "view", "read-only", "readonly", "format", "render", "page that shows", "แสดง", "ดูได้", "รายชื่อ", "หน้าแสดง"],
+  "readOnlyCannotSuppress": ["schema-change"],
   "quickAreas": ["ui"],
   "quickMaxPaths": 1,
   "riskModeMapping": { "low": "QUICK", "medium": "STANDARD", "high": "GUARDED", "critical": "GUARDED" },

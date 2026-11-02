@@ -1,10 +1,10 @@
 {
   "$schema": "../schemas/context-policy.schema.json",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "estimate": "chars/4",
   "budgets": { "QUICK": 1200, "STANDARD": 3500, "GUARDED": 7000 },
   "always": ["forgex/STATE.md"],
-  "priority": ["state", "decisions", "cards", "codemap", "golden"],
+  "priority": ["state", "decisions", "cards", "design", "codemap", "golden"],
   "maxCards": { "QUICK": 1, "STANDARD": 3, "GUARDED": 4 },
   "areas": [
     { "area": "auth", "keywords": ["login", "logout", "auth", "password", "session", "signin", "sign in", "signup", "2fa", "totp", "otp"], "paths": ["**/auth/**", "**/auth*.ts", "**/session*", "**/password*", "**/middleware.ts"] },
@@ -28,5 +28,5 @@
   },
   "goldenMinScore": 2,
   "skip": ["**/node_modules/**", "**/dist/**", "**/.next/**", "forgex/tasks/**", "**/*.lock", "**/package-lock.json"],
-  "skipKinds": { "QUICK": ["golden"] }
+  "skipKinds": { "QUICK": ["golden", "design"] }
 }

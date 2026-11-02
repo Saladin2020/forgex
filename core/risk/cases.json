@@ -1,20 +1,355 @@
 [
-  {"name": "tiny css", "in": {"paths": ["src/app/globals.css"], "areas": ["ui"]}, "mode": "QUICK"},
-  {"name": "no tags/areas", "in": {"paths": ["src/x.ts"]}, "mode": "STANDARD"},
-  {"name": "no paths", "in": {"areas": ["ui"]}, "mode": "STANDARD"},
-  {"name": "auth area", "in": {"paths": ["src/app/login/page.tsx"], "areas": ["auth"]}, "mode": "GUARDED"},
-  {"name": "auth glob", "in": {"paths": ["./app/auth/x.ts"]}, "mode": "GUARDED"},
-  {"name": "secret glob", "in": {"paths": ["config/secrets/keys.json"], "areas": ["ui"]}, "mode": "GUARDED"},
-  {"name": "migration under explicit QUICK", "in": {"mode": "QUICK", "paths": ["db/migrations/1.sql"]}, "mode": "GUARDED"},
-  {"name": "explicit GUARDED kept on css", "in": {"mode": "GUARDED", "paths": ["a.css"], "areas": ["ui"]}, "mode": "GUARDED"},
-  {"name": "explicit STANDARD not downgraded", "in": {"mode": "STANDARD", "paths": ["a.css"], "areas": ["ui"]}, "mode": "STANDARD"},
-  {"name": "explicit QUICK kept", "in": {"mode": "QUICK", "paths": ["a.css"], "areas": ["ui"]}, "mode": "QUICK"},
-  {"name": "unknown mode", "in": {"mode": "FAST", "paths": ["a.css"], "areas": ["ui"]}, "mode": "GUARDED"},
-  {"name": "unknown risk", "in": {"risk": "meh", "paths": ["a.css"], "areas": ["ui"]}, "mode": "GUARDED"},
-  {"name": "risk high", "in": {"risk": "high", "paths": ["a.css"], "areas": ["ui"]}, "mode": "GUARDED"},
-  {"name": "multi-area ui+api", "in": {"paths": ["src/app/api/x/route.ts", "a.css"], "areas": ["ui", "api"]}, "mode": "STANDARD"},
-  {"name": "authz not auth", "in": {"paths": ["src/authz.ts"]}, "mode": "STANDARD"},
-  {"name": "extra project glob", "in": {"paths": ["src/fx/rate.ts"], "extraGlobs": ["src/fx/**"]}, "mode": "GUARDED"},
-  {"name": "explicit QUICK, no areas, low risk kept", "in": {"mode": "QUICK", "risk": "low", "paths": ["src/x.ts"]}, "mode": "QUICK"},
-  {"name": "explicit QUICK + medium risk escalates", "in": {"mode": "QUICK", "risk": "medium", "paths": ["src/x.ts"]}, "mode": "STANDARD"}
+  {
+    "name": "tiny css",
+    "in": {
+      "paths": [
+        "src/app/globals.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "QUICK"
+  },
+  {
+    "name": "no tags/areas",
+    "in": {
+      "paths": [
+        "src/x.ts"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "no paths",
+    "in": {
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "auth area keyword alone stays STANDARD",
+    "in": {
+      "paths": [
+        "src/app/members/page.tsx"
+      ],
+      "areas": [
+        "auth"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "auth glob",
+    "in": {
+      "paths": [
+        "./app/auth/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "secret glob",
+    "in": {
+      "paths": [
+        "config/secrets/keys.json"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "migration under explicit QUICK",
+    "in": {
+      "mode": "QUICK",
+      "paths": [
+        "db/migrations/1.sql"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "explicit GUARDED kept on css",
+    "in": {
+      "mode": "GUARDED",
+      "paths": [
+        "a.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "explicit STANDARD not downgraded",
+    "in": {
+      "mode": "STANDARD",
+      "paths": [
+        "a.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "explicit QUICK kept",
+    "in": {
+      "mode": "QUICK",
+      "paths": [
+        "a.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "QUICK"
+  },
+  {
+    "name": "unknown mode",
+    "in": {
+      "mode": "FAST",
+      "paths": [
+        "a.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "unknown risk",
+    "in": {
+      "risk": "meh",
+      "paths": [
+        "a.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "risk high",
+    "in": {
+      "risk": "high",
+      "paths": [
+        "a.css"
+      ],
+      "areas": [
+        "ui"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "multi-area ui+api",
+    "in": {
+      "paths": [
+        "src/app/api/x/route.ts",
+        "a.css"
+      ],
+      "areas": [
+        "ui",
+        "api"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "authz not auth",
+    "in": {
+      "paths": [
+        "src/authz.ts"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "extra project glob",
+    "in": {
+      "paths": [
+        "src/fx/rate.ts"
+      ],
+      "extraGlobs": [
+        "src/fx/**"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "explicit QUICK, no areas, low risk kept",
+    "in": {
+      "mode": "QUICK",
+      "risk": "low",
+      "paths": [
+        "src/x.ts"
+      ]
+    },
+    "mode": "QUICK"
+  },
+  {
+    "name": "explicit QUICK + medium risk escalates",
+    "in": {
+      "mode": "QUICK",
+      "risk": "medium",
+      "paths": [
+        "src/x.ts"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "login decision change",
+    "in": {
+      "task": "fix login",
+      "paths": [
+        "src/app/login/page.tsx"
+      ],
+      "areas": [
+        "auth"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "members read page (Thai) stays STANDARD",
+    "in": {
+      "task": "เพิ่มหน้า /members แสดงรายชื่อสมาชิก (email, role) จากตาราง users ต้องล็อกอินก่อนถึงเห็น",
+      "paths": [
+        "app/members/page.tsx"
+      ],
+      "areas": [
+        "auth",
+        "db"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "125.75 display fix stays STANDARD",
+    "in": {
+      "task": "หน้า dashboard แสดงยอด 125.8 แต่ควรเป็น 125.75 แก้ให้ถูก",
+      "paths": [
+        "lib/money.ts"
+      ],
+      "areas": [
+        "money"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "money transfer write",
+    "in": {
+      "task": "เพิ่ม API โอนเงินระหว่างสมาชิก maker กับ checker ต้องเป็นคนละคน",
+      "paths": [
+        "app/api/transfers/route.ts"
+      ],
+      "areas": [
+        "money",
+        "api"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "schema change not suppressed by read-only words",
+    "in": {
+      "task": "add column to show nickname",
+      "paths": [
+        "src/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "schema file path",
+    "in": {
+      "paths": [
+        "db/schema.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "explicit QUICK on login decision escalates",
+    "in": {
+      "mode": "QUICK",
+      "task": "fix login",
+      "paths": [
+        "src/app/login/page.tsx"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "explicit QUICK on read-only login page text kept",
+    "in": {
+      "mode": "QUICK",
+      "task": "show login page title in Thai",
+      "paths": [
+        "src/app/login/page.tsx"
+      ]
+    },
+    "mode": "QUICK"
+  },
+  {
+    "name": "payments dir display stays STANDARD",
+    "in": {
+      "task": "display payment history",
+      "paths": [
+        "src/payments/History.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "secret glob explicit QUICK",
+    "in": {
+      "mode": "QUICK",
+      "paths": [
+        "config/app.pem"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "reading db/schema is not a schema change",
+    "in": {
+      "task": "list users imported from db/schema",
+      "paths": [
+        "app/members/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "explicit schema change",
+    "in": {
+      "task": "change the schema for loans",
+      "paths": [
+        "src/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "approve endpoint write",
+    "in": {
+      "task": "checker approves the transfer and posts it to the ledger",
+      "paths": [
+        "app/api/transfers/[id]/approve/route.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  }
 ]

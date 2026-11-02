@@ -1,6 +1,6 @@
 ---
-description: FORGEX GUARDED mode for migrations, auth, money, secrets, env files and deployment config (globs mirror core/risk/rules.json)
-globs: "**/migrations/**,**/auth/**,**/.env*,**/middleware.ts,**/vercel.json,**/drizzle.config.*,**/prisma/schema.prisma,**/payment*/**,**/billing/**,**/money/**,**/secrets/**,**/*secret*,**/*.pem,**/*.key"
+description: FORGEX GUARDED mode for migrations/schema, auth code, secrets, env files and deployment config (globs mirror core/risk/rules.json)
+globs: "**/migrations/**,**/drizzle/**/*.sql,**/db/schema.ts,**/schema.prisma,**/drizzle.config.*,**/auth/**,**/auth.ts,**/auth.config.ts,**/middleware.ts,**/.env*,**/vercel.json,**/secrets/**,**/*secret*,**/*.pem,**/*.key"
 alwaysApply: false
 ---
 
@@ -8,8 +8,8 @@ alwaysApply: false
 
 Editing a file that matches these globs puts the task in **GUARDED** mode, whatever mode it started in.
 
-- Before editing, write a plan, get explicit authorization, and name a rollback runbook (RB-2 for Neon migrations, RB-3 for Vercel deploys, RB-4 for secrets).
-- **Migrations:** use expand/contract. Rehearse on a Neon branch `forgex-<taskId>`, write and test a down migration, and never run one against production without authorization.
+- Before editing, write a short plan and name a rollback runbook (RB-2 for Neon migrations, RB-3 for Vercel deploys, RB-4 for secrets).
+- **Migrations:** use expand/contract. Rehearse on a Neon branch `forgex-<taskId>`, write and test a down migration, and never run one against production data without asking (data deletion is a stop point).
 - **Auth:** add negative tests (an unauthenticated or unauthorized request gets 401/403). Never weaken a check to make a test pass.
 - **`.env*` / secrets:** never print, commit or copy the values. Reference variable names only, and set values through Vercel env vars.
 - **Evidence:** record a Vercel preview URL you actually checked, CI results and the gitleaks result. GUARDED PRs need human review and must not be auto-merged.

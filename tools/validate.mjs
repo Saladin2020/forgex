@@ -34,7 +34,7 @@ const GUARDED_RE = [...new Set([...RISK_RULES.guardedGlobs, ...EXTRA_GLOBS])].ma
 function crossCheck(c) {
   const out = [];
   if (typeof c.mode === "string") {
-    const r = classify({ mode: c.mode, paths: c.touchedPaths || [], risk: c.riskLevel ?? null, extraGlobs: EXTRA_GLOBS });
+    const r = classify({ mode: c.mode, paths: c.touchedPaths || [], risk: c.riskLevel ?? null, extraGlobs: EXTRA_GLOBS, task: c.goal ?? "" });
     if (r.mode !== c.mode) {
       const g = r.reasons.find((x) => x.includes("guarded glob"));
       out.push(g ? `/touchedPaths ${g.replace(" matches guarded glob ", ` matches guardedGlob "`)}": risk under-rated, use ${r.mode}` : `/mode ${c.mode} under-rated (${r.reasons.join("; ")}): use ${r.mode}`);

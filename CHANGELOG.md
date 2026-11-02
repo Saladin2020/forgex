@@ -1,5 +1,17 @@
 # Changelog
 
+## v2.7.0 (2026-11-03): findings from A/B bench run
+Credit: findings from A/B bench run (v2.6.1 bench, 8 findings).
+- Risk: GUARDED only when the task **writes** money/balances, changes schema/migrations, or changes login/authz decisions (`writeSignals` EN+TH in `rules.json`), a secret/key/env/migration/auth-code glob matches, or mode is explicit GUARDED. Read/display work (members list page, 125.75 display fix, payment history) stays STANDARD; read-only words never cancel schema-change. Money/payment/billing globs and `guardedAreas` removed. 31 py/js parity cases.
+- ctxpack: page/UI tasks always reserve one ui/design/style/token card ("UI style slot") and load the kit `DESIGN.md` (new `design` kind, STANDARD/GUARDED); page tasks with a page path reach the golden minimum.
+- Closing rule: the first slice must be walkable end to end on the user's real path (maker creates → checker approves → ledger posts); never silently move a decision step to non-goals.
+- Encoding: every tool reads/writes text as UTF-8, stdout/stderr reconfigured, argv repaired on non-UTF-8 locales (Windows cp874 crash). Test runs ctxpack + context.py under `LC_ALL=C`.
+- Validation: new pure-Python `tools/validate.py` (schema subset + classifier cross-checks, `--self-test`, run by `release.py`). If no validator can run: one line `validate: skipped`, no NOT_RUN ceremony, no ritual checks that cannot pass.
+- QUICK: no JSON contract and no STATE update; short pack read, ≤3 closing lines. QUICK skips `design`.
+- Tests: only tests that import and call the real code count as evidence.
+- Permission: the task message is permission in every mode, GUARDED included. Stop only before deleting data, real machines/hardware, or secrets. Removed "get permission before you build" in GUARDED.
+- Bench: T4 checks an approve route exists and the approve path posts to the ledger; T2/T5 stay STANDARD.
+
 ## v2.6.1 (2026-11-02): A/B bench
 - New `bench/`: A/B kit to test FORGEX vs no FORGEX in Cursor (same starter, model and prompts). Thai README, 6 tasks (QUICK ×1, STANDARD ×2, GUARDED ×3 incl. a new-chat "ทำต่อ" memory test), `tasks/checks.json` objective checks, generic `starter/` (Next.js 16, Tailwind v4, Drizzle/Neon, Auth.js v5, planted money bug), `style.json`, `score.py` (stdlib; grep/exists/style/cmd checks + results.csv metrics → markdown table with a winner per metric), `results-template.csv`.
 - Personal kits may add `bench/style.json` with their own tokens (`score.py --style`).

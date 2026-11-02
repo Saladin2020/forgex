@@ -5,7 +5,7 @@
 - **QUICK:** มีแค่ goal, check, touchedPaths และ status
 - **STANDARD:** เพิ่มรายการ AC พร้อมระบุว่า AC แต่ละข้อพิสูจน์ด้วย check ไหน (`C1`, `C2`)
 - **GUARDED:** ใช้กฎเต็มชุด ต้องมี runbook, budget, CI และ human review
-- **ตรวจ:** `node tools/validate.mjs forgex/tasks/<id>.json` ถ้างาน QUICK หรือ STANDARD แตะไฟล์ใน migrations, auth หรือ .env* ตัวตรวจจะไม่ผ่าน เพราะประเมินความเสี่ยงต่ำเกินไป ต้องเปลี่ยนเป็น GUARDED
+- **ตรวจ:** `python3 tools/validate.py forgex/tasks/<id>.json` (Python ล้วน ไม่ต้องติดตั้งอะไร) หรือ `node tools/validate.mjs …` ถ้างาน STANDARD แตะไฟล์ใน migrations, auth หรือ .env* ตัวตรวจจะไม่ผ่าน เพราะประเมินความเสี่ยงต่ำเกินไป ต้องเปลี่ยนเป็น GUARDED
 - **ปิดงาน:** `scaffold.py render <file>` สร้างสรุปงานจาก JSON ให้อัตโนมัติ ไม่ต้องเขียนซ้ำ
 - **แพตเทิร์น:** `scaffold.py pattern <file>` บันทึกลงใน `forgex/patterns.md` ให้
 - **pre-commit hook (ไม่บังคับ):** เปิดด้วย `git config core.hooksPath <forgex>/tools/hooks` ถ้าจะข้ามเป็นครั้งคราวใช้ `git commit --no-verify`
@@ -42,7 +42,7 @@ mkdir -p .cursor/skills && cp -r forgex/skills/forgex .cursor/skills/
 
 ## ใช้ในโปรเจกต์ (Next.js + Vercel + Neon)
 1. คัดลอก `tools/` (scaffold, validate และ hooks), `schemas/`, `config/` และ `.github/workflows/forgex.yml` เข้าไปในโปรเจกต์
-2. รัน `npm i -D ajv ajv-formats`
+2. (ไม่บังคับ) รัน `npm i -D ajv ajv-formats` ถ้าจะใช้ validate.mjs
 3. ทุกงานเก็บเป็น `forgex/tasks/<id>.json` ระบบ CI ตรวจทุกไฟล์ทุกโหมด และรัน gitleaks ทุกครั้งที่เปิด PR ถ้าต้องการตั้ง guardedGlobs ของโปรเจกต์เอง ให้สร้าง `forgex/policy.json`
 4. แก้ path ในไฟล์ workflow ให้ตรงกับตำแหน่งที่คัดลอกไฟล์ไปวาง
 

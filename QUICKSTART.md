@@ -3,7 +3,7 @@
 ## 1. Install
 - **Cursor:** unzip `forgex-cursor-plugin.zip` and add it as a local plugin, or copy `rules/*.mdc` to `.cursor/rules/` and `skills/forgex/` to `.cursor/skills/forgex/` in your repo.
 - **Grok Bot / other agents:** give the agent `forgex-grokbot-skill.zip` and ask it to save the `forgex` skill.
-- Optional: `npm i -D ajv ajv-formats` in the project so contracts can be validated.
+- Validation needs nothing extra: `python3 <forgex>/tools/validate.py forgex/tasks/*.json` (pure Python). `npm i -D ajv ajv-formats` is optional for `validate.mjs`. QUICK tasks (one reversible file) need no contract.
 
 ## 2. Make your kit (once)
 ```bash

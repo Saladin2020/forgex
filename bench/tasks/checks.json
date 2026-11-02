@@ -1,31 +1,203 @@
 {
-  "T1": {"mode": "QUICK", "title": "tiny CSS fix", "checks": [
-    {"id": "padding halved", "type": "grep", "files": "app/globals.css", "pattern": "\\.save-button\\s*\\{[^}]*padding:\\s*8px 16px", "expect": "present"},
-    {"id": "no raw hex in tsx", "type": "grep", "files": "app/**/*.tsx", "pattern": "#[0-9a-fA-F]{6}\\b", "expect": "absent"}]},
-  "T2": {"mode": "STANDARD", "title": "new members page", "checks": [
-    {"id": "page exists", "type": "exists", "files": "app/members/page.tsx"},
-    {"id": "reads db schema", "type": "grep", "files": "app/members/**/*.tsx", "pattern": "db/schema", "expect": "present"},
-    {"id": "page is protected", "type": "grep", "files": "app/members/**/*.tsx", "pattern": "auth\\(\\)", "expect": "present"},
-    {"id": "style tokens used", "type": "style", "files": "app/members/**/*.tsx"}]},
-  "T3": {"mode": "GUARDED", "title": "2-step login", "checks": [
-    {"id": "password hashed (argon2/bcrypt)", "type": "grep", "files": "**/*.ts", "pattern": "argon2|bcrypt", "expect": "present"},
-    {"id": "second factor (TOTP)", "type": "grep", "files": "**/*.ts*", "pattern": "(?i)totp|otplib|authenticator", "expect": "present"},
-    {"id": "no plaintext password compare", "type": "grep", "files": "**/*.ts*", "pattern": "password\\s*===|===\\s*password", "expect": "absent"},
-    {"id": "negative auth test", "type": "grep", "files": "tests/**/*", "pattern": "(?i)401|403|wrong|invalid|unauthori", "expect": "present"}]},
-  "T4": {"mode": "GUARDED", "title": "money API with maker-checker", "checks": [
-    {"id": "no float money math", "type": "grep", "files": "{app,lib,db}/**/*.ts", "pattern": "parseFloat|toFixed\\(1\\)|doublePrecision|real\\(|\\bfloat\\b|\\*\\s*0\\.\\d", "expect": "absent"},
-    {"id": "authz in API", "type": "grep", "files": "app/api/**/*.ts", "pattern": "auth\\(\\)", "expect": "present"},
-    {"id": "maker != checker enforced", "type": "grep", "files": "{app,lib}/**/*.ts", "pattern": "(maker|createdBy|requestedBy)\\w*\\s*(===|!==)|(===|!==)\\s*\\w*(maker|createdBy|requestedBy)", "expect": "present"},
-    {"id": "pending/approved states", "type": "grep", "files": "{app,lib,db}/**/*.ts", "pattern": "pending", "expect": "present"},
-    {"id": "migration file", "type": "exists", "files": "{drizzle,db/migrations,migrations}/**/*.sql"}]},
-  "T5": {"mode": "STANDARD", "title": "bugfix totalBalance", "checks": [
-    {"id": "old float bug gone", "type": "grep", "files": "lib/money.ts", "pattern": "/\\s*100\\)\\.toFixed\\(1\\)", "expect": "absent"},
-    {"id": "no float in money.ts", "type": "grep", "files": "lib/money.ts", "pattern": "toFixed|parseFloat", "expect": "absent"},
-    {"id": "regression test 125.75", "type": "grep", "files": "tests/**/*", "pattern": "125\\.75", "expect": "present"},
-    {"id": "npm test passes", "type": "cmd", "cmd": "npm test --silent"}]},
-  "T6": {"mode": "GUARDED", "title": "resume after new chat (reject step)", "checks": [
-    {"id": "reject endpoint", "type": "grep", "files": "app/api/**/*.ts", "pattern": "(?i)reject", "expect": "present"},
-    {"id": "rejected status", "type": "grep", "files": "{app,lib,db}/**/*.ts", "pattern": "rejected", "expect": "present"},
-    {"id": "authz in reject", "type": "grep", "files": "app/api/**/*reject*/**/*.ts", "pattern": "auth\\(\\)", "expect": "present"},
-    {"id": "maker cannot reject own", "type": "grep", "files": "{app,lib}/**/*.ts", "pattern": "(maker|createdBy|requestedBy)\\w*\\s*(===|!==)|(===|!==)\\s*\\w*(maker|createdBy|requestedBy)", "expect": "present"}]}
+  "T1": {
+    "mode": "QUICK",
+    "title": "tiny CSS fix",
+    "checks": [
+      {
+        "id": "padding halved",
+        "type": "grep",
+        "files": "app/globals.css",
+        "pattern": "\\.save-button\\s*\\{[^}]*padding:\\s*8px 16px",
+        "expect": "present"
+      },
+      {
+        "id": "no raw hex in tsx",
+        "type": "grep",
+        "files": "app/**/*.tsx",
+        "pattern": "#[0-9a-fA-F]{6}\\b",
+        "expect": "absent"
+      }
+    ]
+  },
+  "T2": {
+    "mode": "STANDARD",
+    "title": "new members page",
+    "checks": [
+      {
+        "id": "page exists",
+        "type": "exists",
+        "files": "app/members/page.tsx"
+      },
+      {
+        "id": "reads db schema",
+        "type": "grep",
+        "files": "app/members/**/*.tsx",
+        "pattern": "db/schema",
+        "expect": "present"
+      },
+      {
+        "id": "page is protected",
+        "type": "grep",
+        "files": "app/members/**/*.tsx",
+        "pattern": "auth\\(\\)",
+        "expect": "present"
+      },
+      {
+        "id": "style tokens used",
+        "type": "style",
+        "files": "app/members/**/*.tsx"
+      }
+    ]
+  },
+  "T3": {
+    "mode": "GUARDED",
+    "title": "2-step login",
+    "checks": [
+      {
+        "id": "password hashed (argon2/bcrypt)",
+        "type": "grep",
+        "files": "**/*.ts",
+        "pattern": "argon2|bcrypt",
+        "expect": "present"
+      },
+      {
+        "id": "second factor (TOTP)",
+        "type": "grep",
+        "files": "**/*.ts*",
+        "pattern": "(?i)totp|otplib|authenticator",
+        "expect": "present"
+      },
+      {
+        "id": "no plaintext password compare",
+        "type": "grep",
+        "files": "**/*.ts*",
+        "pattern": "password\\s*===|===\\s*password",
+        "expect": "absent"
+      },
+      {
+        "id": "negative auth test",
+        "type": "grep",
+        "files": "tests/**/*",
+        "pattern": "(?i)401|403|wrong|invalid|unauthori",
+        "expect": "present"
+      }
+    ]
+  },
+  "T4": {
+    "mode": "GUARDED",
+    "title": "money API with maker-checker",
+    "checks": [
+      {
+        "id": "no float money math",
+        "type": "grep",
+        "files": "{app,lib,db}/**/*.ts",
+        "pattern": "parseFloat|toFixed\\(1\\)|doublePrecision|real\\(|\\bfloat\\b|\\*\\s*0\\.\\d",
+        "expect": "absent"
+      },
+      {
+        "id": "authz in API",
+        "type": "grep",
+        "files": "app/api/**/*.ts",
+        "pattern": "auth\\(\\)",
+        "expect": "present"
+      },
+      {
+        "id": "maker != checker enforced",
+        "type": "grep",
+        "files": "{app,lib}/**/*.ts",
+        "pattern": "(maker|createdBy|requestedBy)\\w*\\s*(===|!==)|(===|!==)\\s*\\w*(maker|createdBy|requestedBy)",
+        "expect": "present"
+      },
+      {
+        "id": "pending/approved states",
+        "type": "grep",
+        "files": "{app,lib,db}/**/*.ts",
+        "pattern": "pending",
+        "expect": "present"
+      },
+      {
+        "id": "migration file",
+        "type": "exists",
+        "files": "{drizzle,db/migrations,migrations}/**/*.sql"
+      },
+      {
+        "id": "approve route exists",
+        "type": "exists",
+        "files": "app/api/**/approve/**/route.ts"
+      },
+      {
+        "id": "approve path posts to ledger",
+        "type": "grep",
+        "files": "{app/api/**/approve/**/*.ts,lib/**/*approv*.ts}",
+        "pattern": "insert\\(\\s*\\w*ledger|ledger\\w*\\.insert|postLedger|postToLedger|ledgerEntries",
+        "expect": "present"
+      }
+    ]
+  },
+  "T5": {
+    "mode": "STANDARD",
+    "title": "bugfix totalBalance",
+    "checks": [
+      {
+        "id": "old float bug gone",
+        "type": "grep",
+        "files": "lib/money.ts",
+        "pattern": "/\\s*100\\)\\.toFixed\\(1\\)",
+        "expect": "absent"
+      },
+      {
+        "id": "no float in money.ts",
+        "type": "grep",
+        "files": "lib/money.ts",
+        "pattern": "toFixed|parseFloat",
+        "expect": "absent"
+      },
+      {
+        "id": "regression test 125.75",
+        "type": "grep",
+        "files": "tests/**/*",
+        "pattern": "125\\.75",
+        "expect": "present"
+      },
+      {
+        "id": "npm test passes",
+        "type": "cmd",
+        "cmd": "npm test --silent"
+      }
+    ]
+  },
+  "T6": {
+    "mode": "GUARDED",
+    "title": "resume after new chat (reject step)",
+    "checks": [
+      {
+        "id": "reject endpoint",
+        "type": "grep",
+        "files": "app/api/**/*.ts",
+        "pattern": "(?i)reject",
+        "expect": "present"
+      },
+      {
+        "id": "rejected status",
+        "type": "grep",
+        "files": "{app,lib,db}/**/*.ts",
+        "pattern": "rejected",
+        "expect": "present"
+      },
+      {
+        "id": "authz in reject",
+        "type": "grep",
+        "files": "app/api/**/*reject*/**/*.ts",
+        "pattern": "auth\\(\\)",
+        "expect": "present"
+      },
+      {
+        "id": "maker cannot reject own",
+        "type": "grep",
+        "files": "{app,lib}/**/*.ts",
+        "pattern": "(maker|createdBy|requestedBy)\\w*\\s*(===|!==)|(===|!==)\\s*\\w*(maker|createdBy|requestedBy)",
+        "expect": "present"
+      }
+    ]
+  }
 }

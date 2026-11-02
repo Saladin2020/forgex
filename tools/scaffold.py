@@ -10,6 +10,10 @@ Stubs go to forgex/tasks/<taskId>.json and are never overwritten. The agent fill
 """
 import argparse, json, re, subprocess, sys
 from pathlib import Path
+for _s in (sys.stdout, sys.stderr):  # Windows consoles (cp874/cp1252): never crash on Thai output
+    try: _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception: pass
+sys.argv = [x.encode("utf-8", "surrogateescape").decode("utf-8", "replace") for x in sys.argv]  # non-UTF-8 POSIX locales
 
 OUT = Path("forgex/tasks")
 RISK = {"quick": "low", "standard": "medium"}
@@ -30,7 +34,7 @@ def checks(cmds, ids):
 
 def head():
     try:
-        h = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
+        h = subprocess.run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, text=True, encoding="utf-8", check=True).stdout.strip()
         return h if re.fullmatch(r"[0-9a-f]{7,40}", h) else None
     except Exception:
         return None
@@ -89,18 +93,18 @@ def main():
         f = OUT / f"{tid(a.taskId)}.json"
         if f.exists(): sys.exit(f"exists, not overwriting: {f}")
         f.parent.mkdir(parents=True, exist_ok=True)
-        f.write_text(json.dumps(stub(a.cmd, a), indent=2, ensure_ascii=False) + "\n"); print(f)
+        f.write_text(json.dumps(stub(a.cmd, a), indent=2, ensure_ascii=False) + "\n", encoding="utf-8"); print(f)
     elif a.cmd == "render":
-        print(render(json.loads(Path(a.file).read_text())), end="")
+        print(render(json.loads(Path(a.file).read_text(encoding="utf-8"))), end="")
     else:
-        c = json.loads(Path(a.file).read_text())
+        c = json.loads(Path(a.file).read_text(encoding="utf-8"))
         if not c.get("pattern"): sys.exit("no `pattern` in contract")
         pf = Path("forgex/patterns.md")
         if not pf.exists():
-            pf.parent.mkdir(parents=True, exist_ok=True); pf.write_text("# Project patterns (FORGEX)\n<!-- one line each; rg to search; [candidate n/2] -> [rule] at 2+ -->\n")
+            pf.parent.mkdir(parents=True, exist_ok=True); pf.write_text("# Project patterns (FORGEX)\n<!-- one line each; rg to search; [candidate n/2] -> [rule] at 2+ -->\n", encoding="utf-8")
         line = f"- [candidate 1/2] {c['pattern']} ({c['taskId']})\n"
-        if line in pf.read_text(): sys.exit("already recorded")
-        with pf.open("a") as fh: fh.write(line)
+        if line in pf.read_text(encoding="utf-8"): sys.exit("already recorded")
+        with pf.open("a", encoding="utf-8") as fh: fh.write(line)
         print(line, end="")
 
 if __name__ == "__main__":

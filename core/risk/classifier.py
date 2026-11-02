@@ -1,12 +1,13 @@
 """FORGEX shared risk classifier (stdlib). Same rules + logic as classifier.mjs; parity-tested on cases.json.
-classify(mode=None, paths=(), areas=(), risk=None, extra_globs=()) -> {"mode", "derived", "reasons", "warnings"}
-Rules: explicit mode is a floor (never downgraded) and only hard signals raise it (guarded globs/areas -> GUARDED,
-riskLevel mapping); without an explicit mode the path/area heuristic decides;
-missing or unknown data picks the more conservative mode."""
+classify(mode=None, paths=(), areas=(), risk=None, extra_globs=(), task="") -> {"mode", "derived", "reasons", "warnings", "writes"}
+GUARDED only for hard signals: a guarded glob (schema/migrations, auth config, secrets, env, deploy config), a write
+signal in the task text (money-write, schema-change, authz-change), riskLevel high/critical, or an explicit GUARDED.
+Read-only/display wording ("show", "list", "แสดง") cancels money/authz write signals (never schema-change).
+Area keywords alone (auth, money, db) never escalate. Explicit mode is a floor; unknown data -> more conservative."""
 import json, re
 from pathlib import Path
 
-RULES = json.loads((Path(__file__).resolve().parent / "rules.json").read_text())
+RULES = json.loads((Path(__file__).resolve().parent / "rules.json").read_text(encoding="utf-8"))
 ORDER = {m: i for i, m in enumerate(RULES["modes"])}
 
 def glob_re(g):
@@ -20,20 +21,29 @@ def glob_re(g):
     return re.compile("^" + out + "$")
 
 def norm(p): return re.sub(r"^(\./)+", "", str(p).replace("\\", "/"))
-
-def guarded_hit(path, globs):
-    return next((g for g in globs if glob_re(g).match(norm(path))), None)
-
+def guarded_hit(path, globs): return next((g for g in globs if glob_re(g).match(norm(path))), None)
 def top(*ms): return max(ms, key=lambda m: ORDER[m])
 
-def classify(mode=None, paths=(), areas=(), risk=None, extra_globs=()):
+def _has(text, k):
+    if re.search(r"[ก-๙]", k): return k in text
+    return re.search(r"(?<![a-z0-9])" + re.escape(k) + r"(?![a-z0-9])", text) is not None
+
+def write_signals(task):
+    t = (task or "").lower()
+    found = {kind: [k for k in kws if _has(t, k)] for kind, kws in RULES["writeSignals"].items()}
+    found = {k: v for k, v in found.items() if v}
+    ro = [k for k in RULES["readOnlySignals"] if _has(t, k)]
+    if ro: found = {k: v for k, v in found.items() if k in RULES["readOnlyCannotSuppress"]}
+    return found, ro
+
+def classify(mode=None, paths=(), areas=(), risk=None, extra_globs=(), task=""):
     R, reasons, warnings = RULES, [], []
     globs = list(dict.fromkeys([*R["guardedGlobs"], *extra_globs]))
     paths, areas = [norm(p) for p in paths or []], set(areas or [])
     if not paths: d = R["noPathsMode"]; warnings.append(f"no paths given: at least {d}")
     elif len(paths) <= R["quickMaxPaths"] and areas and areas <= set(R["quickAreas"]): d = "QUICK"
     else: d = "STANDARD"
-    hard = "QUICK"  # floor from hard signals only; the path/area heuristic above never overrides an explicit mode
+    hard = "QUICK"
     if risk is not None:
         rm = R["riskModeMapping"].get(risk)
         if rm is None: warnings.append(f"unknown riskLevel {risk!r}: {R['unknownMode']}"); rm = R["unknownMode"]
@@ -42,11 +52,12 @@ def classify(mode=None, paths=(), areas=(), risk=None, extra_globs=()):
     for p in paths:
         g = guarded_hit(p, globs)
         if g: reasons.append(f"path {p} matches guarded glob {g}"); d = hard = "GUARDED"
-    for a in sorted(areas & set(R["guardedAreas"])): reasons.append(f"guarded area {a}"); d = hard = "GUARDED"
+    writes, ro = write_signals(task)
+    for k in sorted(writes): reasons.append(f"{k} ({', '.join(writes[k][:3])})"); d = hard = "GUARDED"
+    if ro and not writes and hard != "GUARDED" and areas & {"auth", "money", "db"}: reasons.append(f"read-only ({', '.join(ro[:2])}): no escalation")
     final = d
     if mode is not None:
         if mode not in ORDER: warnings.append(f"unknown mode {mode!r}: {R['unknownMode']}"); mode = R["unknownMode"]
         final = top(mode, hard)
-        if final != mode: reasons.append(f"explicit {mode} escalated to {final}")
-        else: reasons.append(f"explicit {mode} kept")
-    return {"mode": final, "derived": d, "reasons": reasons, "warnings": warnings}
+        reasons.append(f"explicit {mode} escalated to {final}" if final != mode else f"explicit {mode} kept")
+    return {"mode": final, "derived": d, "reasons": reasons, "warnings": warnings, "writes": sorted(writes)}

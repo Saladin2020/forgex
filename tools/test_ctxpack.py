@@ -2,24 +2,26 @@
 """Scenario tests for ctxpack.py on a throwaway repo (stdlib only). Exit 1 on failure.
   test_ctxpack.py [--kit DIR]   (default: built-in fixture kit)
 """
-import json, subprocess, sys, tempfile, textwrap
+import json, os, subprocess, sys, tempfile, textwrap
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 FAIL = 0
 
-def w(p, s): p.parent.mkdir(parents=True, exist_ok=True); p.write_text(textwrap.dedent(s).lstrip())
+def w(p, s): p.parent.mkdir(parents=True, exist_ok=True); p.write_text(textwrap.dedent(s).lstrip(), encoding="utf-8")
 
 def fixture(root):
     files = ["src/auth.ts", "src/server/password.ts", "src/app/login/page.tsx", "src/app/globals.css",
              "src/components/Button.tsx", "src/app/api/members/route.ts", "src/server/loans.ts", "drizzle/0001_init.sql",
              "src/lib/pdf/receipt.tsx", "src/app/reports/page.tsx", "src/server/push.ts", "tests/login.test.ts"]
     for f in files: w(root / f, "export function x() {}\n")
-    pol = json.loads((HERE.parent / "config/context-policy.json").read_text())
+    pol = json.loads((HERE.parent / "config/context-policy.json").read_text(encoding="utf-8"))
     w(root / "_p1.json", json.dumps({**pol, "maxCards": {"QUICK": 1, "STANDARD": 3, "GUARDED": 1}}))
+    w(root / "_p1s.json", json.dumps({**pol, "maxCards": {"QUICK": 1, "STANDARD": 1, "GUARDED": 1}}))
     w(root / "_tiny.json", json.dumps({**pol, "budgets": {"QUICK": 100, "STANDARD": 100, "GUARDED": 100}}))
     w(root / "_bad.json", "{ not json")
     w(root / "_bad2.json", json.dumps({k: v for k, v in pol.items() if k != "budgets"}))
+    w(root / "_kitdesign", "")
     w(root / "forgex/STATE.md", "# STATE\n- Goal: member app\n- Now: polishing\n- Next: login bug\n")
     big = "\n".join(f"## D-{i} · 2026-10-0{i%9+1} · " + t for i, t in enumerate([
         "Use argon2id for passwords\n- Why: memory-hard\n- Tags: auth",
@@ -38,22 +40,40 @@ def fixture(root):
         w(kit / f"blocks/{n}.md", f"# {n}\n- **Tags:** {tg}\n- **What:** {n} block\n- **Reuse:** " + "details " * 60 + "\n")
     for g in ["form-page", "api-route", "server-action", "test"]:
         w(kit / f"golden/{g}.md", f"# {g}\n```ts\n" + "// shape line\n" * 40 + "```\n")
+    w(kit / "DESIGN.md", "# ดีไซน์\n- tokens: --color-bg, --color-accent (สีหลัก)\n")
     return kit
 
 def pack(root, kit, task, *a):
     cmd = [sys.executable, str(HERE / "ctxpack.py"), task, "--kit", str(kit), "--json", *a]
-    return json.loads(subprocess.run(cmd, cwd=root, capture_output=True, text=True, check=True).stdout)
+    return json.loads(subprocess.run(cmd, cwd=root, capture_output=True, text=True, encoding="utf-8", check=True).stdout)
 
 def full(root, kit):
     fs = [root / "forgex/STATE.md", root / "forgex/DECISIONS.md", root / "forgex/CODEMAP.md", *(kit / "blocks").glob("*.md"), *(kit / "golden").glob("*.md")]
-    return sum((len(f.read_text()) + 3) // 4 for f in fs)
+    return sum((len(f.read_text(encoding="utf-8")) + 3) // 4 for f in fs)
 
 def raw(root, kit, task, *a):
     cmd = [sys.executable, str(HERE / "ctxpack.py"), task, "--kit", str(kit), "--json", *a]
-    return subprocess.run(cmd, cwd=root, capture_output=True, text=True)
+    return subprocess.run(cmd, cwd=root, capture_output=True, text=True, encoding="utf-8")
 
 def edge(root, kit):
     print("-- edge cases --")
+    # v2.7 risk: write signals, not area keywords
+    r = pack(root, kit, "เพิ่มหน้า /members แสดงรายชื่อสมาชิก (email, role) จากตาราง users ต้องล็อกอินก่อนถึงเห็น", "--path", "src/app/members/page.tsx", "--policy", str(root / "_p1s.json"))
+    L = [x["item"] for x in r["loaded"]]
+    check("v2.7 read-only members page stays STANDARD", r["mode"] == "STANDARD", str(r["modeReasons"]))
+    check("v2.7 UI task keeps a style card with maxCards=1", any(x["item"] == "card async-button" and "UI style slot" in x["why"] for x in r["loaded"]), str(L))
+    check("v2.7 UI task loads kit DESIGN.md (Thai, utf-8)", "design DESIGN.md" in L)
+    r = pack(root, kit, "หน้า dashboard แสดงยอด 125.8 แต่ควรเป็น 125.75 แก้ให้ถูก", "--path", "src/server/loans.ts")
+    check("v2.7 125.75 display fix stays STANDARD", r["mode"] == "STANDARD", str(r["modeReasons"]))
+    r = pack(root, kit, "เพิ่ม API โอนเงิน maker checker อนุมัติ", "--path", "src/app/api/members/route.ts")
+    check("v2.7 money transfer write -> GUARDED", r["mode"] == "GUARDED" and any("money-write" in x for x in r["modeReasons"]))
+    r = pack(root, kit, "refactor helper", "--path", "src/server/loans.ts")
+    check("v2.7 non-UI task: no DESIGN.md", not any("DESIGN" in x["item"] for x in r["loaded"]))
+    env = {k: v for k, v in os.environ.items() if not k.startswith(("LC_", "LANG", "PYTHONUTF8", "PYTHONIOENCODING"))}
+    env.update(LC_ALL="C", PYTHONUTF8="0", PYTHONCOERCECLOCALE="0")
+    p = subprocess.run([sys.executable, str(HERE / "ctxpack.py"), "เพิ่มหน้า สมาชิก", "--kit", str(kit), "--path", "src/app/members/page.tsx"], cwd=root, capture_output=True, env=env)
+    p2 = subprocess.run([sys.executable, str(HERE / "context.py"), "decide", "ใช้สีส้ม", "--why", "เจ้าของเลือก", "--alt", "น้ำเงิน", "--tag", "ui"], cwd=root, capture_output=True, env=env)
+    check("utf-8: ctxpack + context.py work under a non-UTF-8 locale (Windows cp874 stand-in)", p.returncode == 0 and p2.returncode == 0, (p.stderr + p2.stderr).decode("utf-8", "replace")[-200:])
     r = pack(root, kit, "tweak spacing", "--path", "drizzle/migrations/0002.sql")
     check("edge guarded glob: migrations -> GUARDED", r["mode"] == "GUARDED" and any("guarded glob" in x for x in r["modeReasons"]))
     r = pack(root, kit, "rename css class", "--mode", "STANDARD", "--path", "src/app/globals.css")
@@ -64,11 +84,11 @@ def edge(root, kit):
     L = [x["item"] for x in r["loaded"]]
     check("edge multi-area: auth+pdf+notify all matched", {"auth", "pdf", "notify"} <= set(r["areas"]), str(list(r["areas"])))
     check("edge multi-area: one core card per area", {"card password-auth", "card thai-pdf", "card web-push"} <= set(L), str(L))
-    r = pack(root, kit, "css loan payment login style", "--mode", "QUICK", "--path", "src/app/globals.css", "--policy", str(root / "_p1.json"))
+    r = pack(root, kit, "loan payment login", "--mode", "QUICK", "--path", "src/server/loans.ts", "--policy", str(root / "_p1.json"))
     cards = [x for x in r["loaded"] if x["item"].startswith("card ")]
     check("edge more core cards than maxCards: limit held", len(cards) == 1, str([c["item"] for c in cards]))
     check("edge core cards over limit explained", any(s["why"].startswith("core card over maxCards") for s in r["skipped"]))
-    check("edge core allocation: guarded area first", cards and cards[0]["item"] in ("card password-auth", "card money-math"))
+    check("edge core allocation: risk area first", cards and cards[0]["item"] in ("card password-auth", "card money-math"))
     r = pack(root, kit, "refactor helper", "--path", "src/components/Button.tsx", "--policy", str(root / "_tiny.json"))
     check("edge over budget: cap held", r["usedTokensEst"] <= r["capTokensEst"] == 100)
     check("edge over budget: items listed with reason", sum("over budget" in s["why"] for s in r["skipped"]) >= 1)
@@ -88,7 +108,7 @@ def edge(root, kit):
     r = pack(root, kit, "fix the page", "--path", "src/server/push.ts")
     check("edge golden min score: one kind word alone not enough", not any(x["item"].startswith("golden") for x in r["loaded"]) and any("golden score 1" in s["why"] for s in r["skipped"]))
     r = pack(root, kit, "add members api", "--path", "src/app/api/members/route.ts")
-    head = (root / "forgex/context-pack.md").read_text().split("\n---\n# FORGEX", 1)[0]
+    head = (root / "forgex/context-pack.md").read_text(encoding="utf-8").split("\n---\n# FORGEX", 1)[0]
     ok = all(k in head for k in ("forgexContextPack:", f"id: {r['packId']}", "forgexVersion:", "policyVersion:", "estimator: \"chars/4\"", "selected:", "skipped:", "warnings:"))
     check("edge metadata header: id, versions, budget, selected/skipped, warnings", ok and r["packId"].startswith("cp-"))
     check("edge metadata: deterministic id", pack(root, kit, "add members api", "--path", "src/app/api/members/route.ts")["packId"] == r["packId"])
@@ -132,8 +152,8 @@ def main():
         check("edge auth path: explicit QUICK escalated to GUARDED", r["mode"] == "GUARDED" and any("escalated" in x for x in r["modeReasons"]))
         check("cap never exceeded + skips explained", r["usedTokensEst"] <= r["capTokensEst"] and all(s["why"] for s in r["skipped"]))
         edge(root, kit)
-        pol = json.loads((HERE.parent / "config/context-policy.json").read_text()); pol["budgets"] = {"QUICK": 150, "STANDARD": 150, "GUARDED": 150}
-        (root / "forgex/context-policy.json").write_text(json.dumps(pol))
+        pol = json.loads((HERE.parent / "config/context-policy.json").read_text(encoding="utf-8")); pol["budgets"] = {"QUICK": 150, "STANDARD": 150, "GUARDED": 150}
+        (root / "forgex/context-policy.json").write_text(json.dumps(pol), encoding="utf-8")
         r = pack(root, kit, "fix login", "--path", "src/app/login/page.tsx")
         print(f"[override cap 150] {r['usedTokensEst']}/{r['capTokensEst']} est. · loaded {[x['item'] for x in r['loaded']]}")
         check("trim: <=150 and over-budget items listed", r["usedTokensEst"] <= 150 and any("over budget" in s["why"] for s in r["skipped"]))

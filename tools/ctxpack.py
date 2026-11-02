@@ -12,6 +12,10 @@ skipped, warnings) that is not counted against the cap; --json reports headerTok
 """
 import argparse, hashlib, json, re, sys
 from pathlib import Path
+for _s in (sys.stdout, sys.stderr):  # Windows consoles (cp874/cp1252): never crash on Thai output
+    try: _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception: pass
+sys.argv = [x.encode("utf-8", "surrogateescape").decode("utf-8", "replace") for x in sys.argv]  # non-UTF-8 POSIX locales
 
 HERE = Path(__file__).resolve().parent
 PKG = HERE.parent  # references/ (shipped) or repo root (source)
@@ -20,7 +24,7 @@ from classifier import classify, RULES  # noqa: E402  shared with validate.mjs (
 
 def fail(msg): print(f"ctxpack: error: {msg}", file=sys.stderr); sys.exit(2)
 def forgex_version():
-    try: return json.loads((PKG / "package.json").read_text())["version"]
+    try: return json.loads((PKG / "package.json").read_text(encoding="utf-8"))["version"]
     except Exception: return "unknown"
 
 def est(s): return (len(s) + 3) // 4
@@ -43,7 +47,7 @@ def first(*cands):
 def load_policy(arg):
     p = first(arg, "forgex/context-policy.json", PKG / "config/context-policy.json")
     if not p: fail("context-policy.json not found")
-    try: pol = json.loads(p.read_text())
+    try: pol = json.loads(p.read_text(encoding="utf-8"))
     except (ValueError, OSError) as e: fail(f"invalid policy {p}: {e}")
     if not isinstance(pol, dict): fail(f"invalid policy {p}: not an object")
     miss = [k for k in ("budgets", "always", "priority", "areas") if k not in pol]
@@ -58,7 +62,7 @@ def load_policy(arg):
 def kit_dir(arg):
     if arg: return Path(arg)
     cfg = PKG / "config/kit.json"
-    name = json.loads(cfg.read_text()).get("kit") if cfg.exists() else None
+    name = json.loads(cfg.read_text(encoding="utf-8")).get("kit") if cfg.exists() else None
     return first(PKG / "kit", PKG / "kits" / name if name else None, PKG / "house", PKG / "core/house")
 
 def words(s): return " " + re.sub(r"[^a-z0-9ก-๙]+", " ", s.lower()) + " "
@@ -75,7 +79,7 @@ def extra_globs():
     """Project forgex/policy.json and shipped default-policy guardedGlobs add to the shared rules (union = conservative)."""
     out = []
     for f in (Path("forgex/policy.json"), PKG / "config/default-policy.json"):
-        try: out += json.loads(f.read_text()).get("guardedGlobs", [])
+        try: out += json.loads(f.read_text(encoding="utf-8")).get("guardedGlobs", [])
         except Exception: pass
     return out
 
@@ -97,7 +101,7 @@ def tags_of(text):
 def decisions(areas, task):
     p = Path("forgex/DECISIONS.md")
     if not p.exists(): return [], []
-    parts = re.split(r"(?m)^(?=## D-\d+)", p.read_text())
+    parts = re.split(r"(?m)^(?=## D-\d+)", p.read_text(encoding="utf-8"))
     keep, skip, w = [], [], words(task)
     for e in parts[1:]:
         head = e.splitlines()[0]; tg = tags_of(e)
@@ -106,20 +110,34 @@ def decisions(areas, task):
     return [("decisions", f"DECISIONS {h.split('·')[0].strip('# ').strip()}", e, f"tags/title match {', '.join(y)}") for e, h, y in keep], \
            [(f"DECISIONS {h.split('·')[0].strip('# ').strip()}", "no matching tag/area") for _, h, _ in skip]
 
-def cards(kit, areas, task, cap):
+UI_WORDS = ("page", "screen", "component", "ui", "form", "หน้า", "ปุ่ม", "ฟอร์ม")
+def is_ui_task(task, paths, pol):
+    """Creates or changes a page/UI: a page/component path, the ui area, or a UI word in the task."""
+    w = words(task); page_globs = pol.get("goldenByKind", {}).get("form-page", []) + ["**/components/**", "**/*.css"]
+    return any(hit(p, page_globs) for p in paths) or any((f" {k} " in w) if k.isascii() else (k in task) for k in UI_WORDS)
+
+STYLE_TAGS = {"ui", "design", "style", "token", "tokens", "theme"}
+
+def cards(kit, areas, task, cap, ui=False):
     if not kit or not (kit / "blocks").is_dir(): return [], []
     scored, skip, w = [], [], words(task)
     for c in sorted((kit / "blocks").glob("*.md")):
         if c.name.startswith("_") or c.name == "INDEX.md": continue
-        t = c.read_text(); tg = tags_of(t)
+        t = c.read_text(encoding="utf-8"); tg = tags_of(t)
         s = 3 * len(tg & set(areas)) + sum(1 for x in tg if f" {x} " in w) + (2 if words(c.stem.replace("-", " ")).strip() in w else 0)
         (scored if s else skip).append((s, c, t) if s else (f"card {c.stem}", "tags not in task areas"))
     scored.sort(key=lambda x: -x[0])
     # Reserve a slot per area for its core card (primary = first tag), then fill by score.
     prim = lambda t: (re.search(r"Tags:?\**:?\s*([^,\n]+)", t) or [None, ""])[1].strip().lower()
     picked = []
-    # Allocation rule: guarded areas first, then policy order; one core slot each until the cap is full.
-    order = sorted(areas, key=lambda x: (x not in RULES["guardedAreas"], list(areas).index(x)))
+    if ui and cap > 0:  # UI task: always keep one style/design card, even if risk areas would take every slot
+        allc = [(3, c, c.read_text(encoding="utf-8")) for c in sorted((kit / "blocks").glob("*.md")) if not c.name.startswith("_") and c.name != "INDEX.md"]
+        sty = next((x for x in scored if tags_of(x[2]) & STYLE_TAGS), None) or next((x for x in allc if tags_of(x[2]) & STYLE_TAGS), None)
+        if sty:
+            if sty not in scored: scored.append(sty); skip[:] = [s for s in skip if s[0] != f"card {sty[1].stem}"]
+            picked.append(sty)
+    # Allocation rule: risk areas (auth, money, db) first, then policy order; one core slot each until the cap is full.
+    order = sorted(areas, key=lambda x: (x not in ("auth", "money", "db"), list(areas).index(x)))
     for ar in order:
         core = next((x for x in scored if prim(x[2]) == ar and x not in picked), None)
         if core and len(picked) < cap: picked.append(core)
@@ -130,12 +148,13 @@ def cards(kit, areas, task, cap):
             core = prim(t) in areas
             skip.append((f"card {c.stem}", f"{'core card ' if core else ''}over maxCards={cap} (score {s})"))
     core_names = {x[1] for x in picked if prim(x[2]) in areas}
-    return [("cards", f"card {c.stem}", t.strip(), f"tag score {s}" + (" · area core card" if c in core_names else "")) for s, c, t in picked], skip
+    sty_c = picked[0][1] if ui and picked and tags_of(picked[0][2]) & STYLE_TAGS else None
+    return [("cards", f"card {c.stem}", t.strip(), f"tag score {s}" + (" · area core card" if c in core_names else "") + (" · UI style slot" if c == sty_c else "")) for s, c, t in picked], skip
 
 def codemap(paths, areas, pol):
     p = Path("forgex/CODEMAP.md")
     if not p.exists(): return [], [("CODEMAP", "forgex/CODEMAP.md missing (run codemap.py)")]
-    secs = re.split(r"(?m)^(?=## )", p.read_text())
+    secs = re.split(r"(?m)^(?=## )", p.read_text(encoding="utf-8"))
     keep, skip = [], []
     dirs = {str(Path(x).parent) for x in paths}
     kw = {k for a in areas for ar in pol["areas"] if ar["area"] == a for k in ar["keywords"] if len(k) > 3}
@@ -149,7 +168,14 @@ def codemap(paths, areas, pol):
 
 KIND_WORDS = {"form-page": ["page", "form"], "api-route": ["api", "endpoint", "route"], "server-action": ["action", "mutation"], "test": ["test", "spec"]}
 
-def golden(kit, paths, task, pol):
+def design(kit, ui):
+    """Kit DESIGN.md (tokens, fonts, shapes) for any UI task."""
+    f = kit / "DESIGN.md" if kit else None
+    if not f or not f.exists(): return [], []
+    if not ui: return [], [("design DESIGN.md", "not a UI task")]
+    return [("design", "design DESIGN.md", f.read_text(encoding="utf-8").strip(), "UI task: design tokens always loaded")], []
+
+def golden(kit, paths, task, pol, ui=False):
     """Score = 3 per touched path matching the kind's globs + 1 per kind word in the task; keep if >= goldenMinScore."""
     if not kit or not (kit / "golden").is_dir(): return [], []
     w, keep, skip, need = words(task), [], [], pol.get("goldenMinScore", 2)
@@ -157,9 +183,9 @@ def golden(kit, paths, task, pol):
         f = kit / "golden" / f"{kind}.md"
         if not f.exists(): continue
         ph = sum(1 for p in paths if hit(p, globs)); kw = [k for k in KIND_WORDS.get(kind, []) if f" {k} " in w]
-        s = 3 * ph + len(kw)
+        s = 3 * ph + len(kw) + (need if ui and kind == "form-page" and ph else 0)
         why = f"golden score {s} (paths {ph}, words {','.join(kw) or '-'}; min {need})"
-        if s >= need: keep.append(("golden", f"golden {kind}", f.read_text().strip(), why))
+        if s >= need: keep.append(("golden", f"golden {kind}", f.read_text(encoding="utf-8").strip(), why))
         else: skip.append((f"golden {kind}", why))
     return keep, skip
 
@@ -186,22 +212,25 @@ def main():
     paths = [p for p in allp if not hit(p, pol.get("skip", []))]
     areas = areas_for(a.task, paths, pol)
     if not areas: warnings.append("no area matched (no tags/keywords): only STATE, touched CODEMAP and golden by path")
-    risk = classify(mode=a.mode, paths=allp, areas=list(areas), extra_globs=extra_globs())
+    risk = classify(mode=a.mode, paths=allp, areas=list(areas), extra_globs=extra_globs(), task=a.task)
     mode = risk["mode"]; warnings += risk["warnings"]
     cap = pol["budgets"][mode]; ncards = pol.get("maxCards", {}).get(mode, 3)
     cand = {"state": [], "decisions": [], "cards": [], "codemap": [], "golden": []}
     for g in pol["always"]:
         for f in sorted(Path(".").glob(g)) or []:
-            cand["state"].append(("state", str(f), f.read_text().strip(), "always"))
+            cand["state"].append(("state", str(f), f.read_text(encoding="utf-8").strip(), "always"))
         if not any(Path(".").glob(g)): skipped.append((g, "missing (run context.py init)"))
-    for k, fn in (("decisions", lambda: decisions(areas, a.task)), ("cards", lambda: cards(kit, areas, a.task, ncards)),
-                  ("codemap", lambda: codemap(paths, areas, pol)), ("golden", lambda: golden(kit, paths, a.task, pol))):
+    ui = is_ui_task(a.task, paths, pol)
+    cand["design"] = []
+    for k, fn in (("decisions", lambda: decisions(areas, a.task)), ("cards", lambda: cards(kit, areas, a.task, ncards, ui)), ("design", lambda: design(kit, ui)),
+                  ("codemap", lambda: codemap(paths, areas, pol)), ("golden", lambda: golden(kit, paths, a.task, pol, ui))):
         if k in pol.get("skipKinds", {}).get(mode, []):
             items, sk = fn(); skipped += [(i[1], f"kind '{k}' skipped in {mode}") for i in items] + sk; continue
         items, sk = fn(); cand[k] = items; skipped += sk
     head = f"# FORGEX context pack · {mode} · cap {cap} est. tokens\nTask: {a.task}\nAreas: {', '.join(areas) or '-'}\n"
     used, chosen, body = est(head), [], []
-    for k in pol["priority"]:
+    prio = list(pol["priority"]) + [k for k in ("design",) if k not in pol["priority"]]
+    for k in prio:
         for kind, label, text, why in cand.get(k, []):
             block = f"\n---\n## [{label}]\n{text}\n"; t = est(block)
             if used + t <= cap: used += t; chosen.append((label, t, why)); body.append(block)
@@ -215,7 +244,7 @@ def main():
     meta = {"id": pid, "forgexVersion": forgex_version(), "policyVersion": pol.get("version", "unknown"), "policy": str(pol_path),
             "mode": mode, "modeReasons": risk["reasons"], "cap": cap, "used": est(content), "selected": chosen, "skipped": skipped, "warnings": warnings}
     bundle = meta_header(meta) + content
-    out = Path(a.out); out.parent.mkdir(parents=True, exist_ok=True); out.write_text(bundle)
+    out = Path(a.out); out.parent.mkdir(parents=True, exist_ok=True); out.write_text(bundle, encoding="utf-8")
     rep = {"packId": pid, "forgexVersion": meta["forgexVersion"], "policyVersion": meta["policyVersion"], "estimator": "chars/4",
            "modeReasons": risk["reasons"], "warnings": warnings, "headerTokensEst": est(bundle) - est(content), "mode": mode, "capTokensEst": cap, "usedTokensEst": est(content), "areas": areas, "policy": str(pol_path),
            "kit": str(kit) if kit else None, "loaded": [{"item": l, "tokensEst": t, "why": w} for l, t, w in chosen],

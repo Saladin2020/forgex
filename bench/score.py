@@ -4,8 +4,12 @@
 Runs tasks/checks.json against each arm's final folder (grep / exists / style / cmd checks), reads results.csv
 (arm,task,tokens,rounds,minutes,reexplained,notes) and prints a markdown table with a winner per metric.
 cmd checks run only if the arm has node_modules (else SKIP, not counted)."""
-import argparse, csv, json, re, subprocess
+import argparse, csv, json, re, subprocess, sys
 from pathlib import Path
+for _s in (sys.stdout, sys.stderr):  # Windows consoles (cp874/cp1252): never crash on Thai output
+    try: _s.reconfigure(encoding="utf-8", errors="replace")
+    except Exception: pass
+sys.argv = [x.encode("utf-8", "surrogateescape").decode("utf-8", "replace") for x in sys.argv]  # non-UTF-8 POSIX locales
 
 HERE = Path(__file__).resolve().parent
 SKIP_DIRS = {"node_modules", ".next", ".git", "dist", "forgex"}
@@ -39,7 +43,7 @@ def run_check(root, c, style, allow_cmd):
         return tok and not hexes, ("" if tok else "no tokens ") + (f"raw hex {hexes[:2]}" if hexes else "")
     if t == "cmd":
         if not allow_cmd or not (root / "node_modules").is_dir(): return None, "skipped (no node_modules)"
-        r = subprocess.run(c["cmd"], shell=True, cwd=root, capture_output=True, text=True, timeout=600)
+        r = subprocess.run(c["cmd"], shell=True, cwd=root, capture_output=True, text=True, encoding="utf-8", timeout=600)
         return r.returncode == 0, "" if r.returncode == 0 else (r.stdout + r.stderr).strip()[-120:]
     return False, f"unknown check type {t}"
 
@@ -58,7 +62,7 @@ def main():
     ap.add_argument("--results", default="results.csv"); ap.add_argument("--out"); ap.add_argument("--no-cmd", action="store_true")
     ap.add_argument("--checks", default=str(HERE / "tasks/checks.json")); ap.add_argument("--style", default=str(HERE / "style.json"))
     a = ap.parse_args()
-    checks, style = json.loads(Path(a.checks).read_text()), json.loads(Path(a.style).read_text())
+    checks, style = json.loads(Path(a.checks).read_text(encoding="utf-8")), json.loads(Path(a.style).read_text(encoding="utf-8"))
     arms = {"A": Path(a.a).resolve(), "B": Path(a.b).resolve()}
     for k, v in arms.items():
         if not (v / "package.json").is_file(): ap.error(f"arm {k}: {v} has no package.json (not a project folder)")
@@ -81,7 +85,7 @@ def main():
     L.append(f"| **All** | | **{tot['A'][0]}/{tot['A'][1]}** | **{tot['B'][0]}/{tot['B'][1]}** | **{win(ra, rb, lower=False)}** |")
     rows, rp = [], Path(a.results)
     if rp.exists():
-        rows = [r for r in csv.DictReader(rp.open(encoding="utf-8")) if (r.get("arm") or "").strip().upper() in arms]
+        rows = [r for r in csv.DictReader(rp.open(encoding="utf-8", newline="")) if (r.get("arm") or "").strip().upper() in arms]
     L += ["", "## Logged metrics (results.csv, lower is better)", ""]
     if not rows: L.append(f"_No rows in {rp} yet._")
     else:

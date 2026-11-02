@@ -1,9 +1,9 @@
-# FORGEX v2.6: Lean AI Engineering System
+# FORGEX v2.7: Lean AI Engineering System
 
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 
 FORGEX helps AI coding agents (Cursor, Grok Bot, any agent that reads Markdown) work **fast, correctly and with few tokens**:
-- **Risk modes:** QUICK / STANDARD / GUARDED, each with a small machine-checked JSON contract (`tools/scaffold.py`, `tools/validate.mjs`).
+- **Risk modes:** QUICK / STANDARD / GUARDED, sized to risk: QUICK needs no contract; STANDARD/GUARDED get a small machine-checked JSON contract (`tools/scaffold.py`, `tools/validate.py` pure Python or `tools/validate.mjs`). GUARDED only for writing money, schema/migrations, login/authz decisions, or secrets/env.
 - **Lego blocks:** work is split into blocks with interfaces and built seed-first; seams are checked once.
 - **Context files:** `STATE.md`, `DECISIONS.md`, `CODEMAP.md` per project, so a new chat or bot picks up where the last stopped without re-reading the repo.
 - **House kits:** your stack, design, reusable feature cards and golden code examples, so new apps follow your style without retyping it.
@@ -19,7 +19,7 @@ kits/<name>/    filled kits (personal or team); never shipped in the public pack
 config/         default-policy.json, kit.example.json (copy to kit.json to pick your kit)
 schemas/ examples/ targets/cursor/ extras/
 bench/          A/B test kit: FORGEX vs no FORGEX (README in Thai, tasks, starter, score.py)
-tools/          scaffold.py, context.py, codemap.py, ctxpack.py, validate.mjs, build.py, release.py, test_*.py, hooks/
+tools/          scaffold.py, context.py, codemap.py, ctxpack.py, validate.py, validate.mjs, build.py, release.py, test_*.py, hooks/
 ```
 
 ## Commands

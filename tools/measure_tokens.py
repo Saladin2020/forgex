@@ -8,13 +8,13 @@ try:
 except ImportError:
     METHOD = "chars/4 estimate"; count = lambda s: math.ceil(len(s) / 4)
 v2, v21, v22, v2t = map(Path, sys.argv[1:5])
-tok = lambda *fs: sum(count(Path(f).read_text()) for f in fs)
-body = lambda f: count(Path(f).read_text())
+tok = lambda *fs: sum(count(Path(f).read_text(encoding="utf-8")) for f in fs)
+body = lambda f: count(Path(f).read_text(encoding="utf-8"))
 def render(f):
-    return count(subprocess.run([sys.executable, str(v22 / "tools/scaffold.py"), "render", str(f)], capture_output=True, text=True, check=True).stdout)
+    return count(subprocess.run([sys.executable, str(v22 / "tools/scaffold.py"), "render", str(f)], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
 V = v22 / "examples/contracts/valid"
 rows = [("Always-on rule forgex.mdc", body(v2/"core/rules/forgex.mdc"), body(v21/"core/rules/forgex.mdc"), body(v22/"core/rules/forgex.mdc"), None)]
-rows.append(("Always-on skill catalog entry", *(count((p/"core/skill/SKILL.md").read_text().split("---")[1]) for p in (v2, v21, v22)), None))
+rows.append(("Always-on skill catalog entry", *(count((p/"core/skill/SKILL.md").read_text(encoding="utf-8").split("---")[1]) for p in (v2, v21, v22)), None))
 rows.append(("On demand: SKILL.md", *(body(p/"core/skill/SKILL.md") for p in (v2, v21, v22)), None))
 for m, f21 in (("QUICK", ["quick.md"]), ("STANDARD", ["standard.md"]), ("GUARDED", ["guarded.json", "guarded.closeout.md"])):
     k = m.lower()

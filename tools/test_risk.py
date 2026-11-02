@@ -8,9 +8,9 @@ RISK = ROOT / "risk" if (ROOT / "risk").is_dir() else ROOT / "core/risk"
 sys.path.insert(0, str(RISK))
 from classifier import classify  # noqa: E402
 
-cases = json.loads((RISK / "cases.json").read_text())
+cases = json.loads((RISK / "cases.json").read_text(encoding="utf-8"))
 py = [classify(**{("extra_globs" if k == "extraGlobs" else k): v for k, v in c["in"].items()})["mode"] for c in cases]
-js = json.loads(subprocess.run(["node", str(RISK / "parity.mjs")], capture_output=True, text=True, check=True).stdout)
+js = json.loads(subprocess.run(["node", str(RISK / "parity.mjs")], capture_output=True, text=True, encoding="utf-8", check=True).stdout)
 fail = 0
 for c, p, j in zip(cases, py, js):
     good = p == j == c["mode"]; fail += not good
