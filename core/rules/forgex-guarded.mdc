@@ -1,6 +1,6 @@
 ---
-description: FORGEX GUARDED mode for migrations, auth, env files and deployment config
-globs: "**/migrations/**,**/auth/**,**/.env*,**/middleware.ts,**/vercel.json,**/drizzle.config.*,**/prisma/schema.prisma"
+description: FORGEX GUARDED mode for migrations, auth, money, secrets, env files and deployment config (globs mirror core/risk/rules.json)
+globs: "**/migrations/**,**/auth/**,**/.env*,**/middleware.ts,**/vercel.json,**/drizzle.config.*,**/prisma/schema.prisma,**/payment*/**,**/billing/**,**/money/**,**/secrets/**,**/*secret*,**/*.pem,**/*.key"
 alwaysApply: false
 ---
 

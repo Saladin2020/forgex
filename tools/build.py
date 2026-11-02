@@ -18,20 +18,20 @@ SECRETISH = re.compile(r"(postgres(ql)?://\S+:\S+@|sk_(live|test)_\w+|ghp_\w{20,
 def references(dst: Path, kit: Path | None):
     dst.mkdir(parents=True, exist_ok=True)
     shutil.copy(ROOT / "core/FORGEX.md", dst / "FORGEX.md")
-    for d in ("guides", "templates", "house"):
-        shutil.copytree(ROOT / "core" / d, dst / d)
+    for d in ("guides", "templates", "house", "risk"):
+        shutil.copytree(ROOT / "core" / d, dst / d, ignore=shutil.ignore_patterns("__pycache__", "*.pyc"))
     if kit:
         shutil.copytree(kit, dst / "kit", ignore=shutil.ignore_patterns("private-terms.txt"))
     shutil.copytree(ROOT / "schemas", dst / "schemas")
     (dst / "config").mkdir(); shutil.copy(ROOT / "config/default-policy.json", dst / "config"); shutil.copy(ROOT / "config/context-policy.json", dst / "config")
     (dst / "tools").mkdir()
-    for f in ("validate.mjs", "scaffold.py", "context.py", "codemap.py", "ctxpack.py"): shutil.copy(ROOT / "tools" / f, dst / "tools")
+    for f in ("validate.mjs", "scaffold.py", "context.py", "codemap.py", "ctxpack.py", "test_risk.py"): shutil.copy(ROOT / "tools" / f, dst / "tools")
     shutil.copytree(ROOT / "extras", dst / "extras")
     shutil.copytree(ROOT / "tools/hooks", dst / "tools/hooks")
     shutil.copytree(ROOT / "tools/vendor", dst / "tools/vendor")
     shutil.copy(ROOT / "package.json", dst / "package.json")
 
-def zipdir(src: Path, out: Path, prefix: str = "", skip=("node_modules", "dist", ".git")):
+def zipdir(src: Path, out: Path, prefix: str = "", skip=("node_modules", "dist", ".git", "__pycache__")):
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for p in sorted(src.rglob("*")):
             rel = p.relative_to(src)
@@ -74,7 +74,7 @@ def main():
         if d.name != "public-repo": shutil.rmtree(d) if d.is_dir() else d.unlink()
     pub = DIST / "public"
     package(pub, None, None)
-    zipdir(ROOT, pub / f"FORGEX_v{VERSION}-src.zip", f"FORGEX_v{VERSION}", skip=("node_modules", "dist", ".git", "kits", "kit.json"))
+    zipdir(ROOT, pub / f"FORGEX_v{VERSION}-src.zip", f"FORGEX_v{VERSION}", skip=("node_modules", "dist", ".git", "kits", "kit.json", "__pycache__"))
     # Privacy scan: every kit's private-terms.txt must be absent from the public output.
     terms = sorted({t.strip() for f in (ROOT / "kits").glob("*/private-terms.txt") for t in f.read_text().splitlines() if t.strip() and not t.startswith("#")})
     zipcheck = DIST / "_scan"; 

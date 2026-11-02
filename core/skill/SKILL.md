@@ -2,13 +2,14 @@
 name: forgex
 description: Use for a software change done FORGEX-style (fast, correct, few tokens). Covers picking QUICK/STANDARD/GUARDED, generating and filling the per-mode JSON contract, Lego blocks built seed-first, seam checks, validating, closing with a rendered report and one pattern line, starting a new web app from a house kit (profile, design, block cards, golden examples), and keeping STATE, DECISIONS and CODEMAP context files.
 ---
-# FORGEX v2.5
+# FORGEX v2.6
 
 `F` = `references/tools`. The spec is `references/FORGEX.md`; read only the section you need. Every mode uses a JSON contract at `forgex/tasks/<taskId>.json`. Generate it with the scaffold, **fill in values only**, and validate it with `node F/validate.mjs <file>`, which needs `ajv`. If Node or ajv is missing, report the validation as NOT_RUN.
 
 ## CONTEXT (every session)
 `K` = `references/kit` if it exists, else `references/house` (blank template).
-- **Start (lean by default):** `python3 F/ctxpack.py "<task>" --path <file> …` and read **only** `forgex/context-pack.md` (STATE + matching DECISIONS, cards, CODEMAP sections, golden files, capped per mode; est. tokens). Open more only if the pack lacks something, and say why. No Python? Follow `F/../config/context-policy.json` by hand: STATE, `rg` DECISIONS/INDEX for the task's area tags, only touched CODEMAP dirs. Missing files? `python3 F/context.py init` and `python3 F/codemap.py`.
+- **Start (before any code, lean by default):** `python3 F/ctxpack.py "<task>" --path <file> …` and read **only** `forgex/context-pack.md` (STATE + matching DECISIONS, cards, CODEMAP sections, golden files, capped per mode; est. tokens). Use the mode it prints (shared risk classifier; it never lowers an explicit mode). **Say once:** `context: pack <id> · <MODE> · <used>/<cap> est. tokens`. Open more only if the pack lacks something, and say why. Exit 2 = fix the policy or path, don't guess.
+- **No Python?** Fallback by hand and say `context: manual (no python) · <MODE>`: read STATE, `rg` DECISIONS and blocks/INDEX for the task's area tags, only touched CODEMAP dirs, ≤ the mode cap in `F/../config/context-policy.json`. Mode: guarded glob in `F/../risk/rules.json` or auth/money/db → GUARDED; when unsure pick the higher mode. Missing files? `python3 F/context.py init` and `python3 F/codemap.py`.
 - **End or handoff:** rewrite `forgex/STATE.md` (≤30 lines). Each settled choice: `python3 F/context.py decide "<d>" --why "<w>" --alt "<x>" --tag <area>`. Never reverse a D-entry without a new superseding one. After adding/moving files, rerun `codemap.py`.
 
 ## NEW WEB APP (read these first, nothing else)

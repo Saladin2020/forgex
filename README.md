@@ -1,4 +1,4 @@
-# FORGEX v2.5: Lean AI Engineering System
+# FORGEX v2.6: Lean AI Engineering System
 
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 
@@ -13,11 +13,12 @@ New here? Read **[QUICKSTART.md](QUICKSTART.md)**. Thai install guide: [INSTALL-
 ## Layout
 ```
 core/           single source: FORGEX.md (spec), rules/, skill/SKILL.md, guides/, templates/ (STATE, DECISIONS, patterns…)
+core/risk/      shared risk classifier (rules.json + classifier.py/.mjs), used by ctxpack and validate
 core/house/     blank kit template (PROFILE, DESIGN, blocks/, golden/)
 kits/<name>/    filled kits (personal or team); never shipped in the public package
 config/         default-policy.json, kit.example.json (copy to kit.json to pick your kit)
 schemas/ examples/ targets/cursor/ extras/
-tools/          scaffold.py, context.py, codemap.py, validate.mjs, build.py, hooks/
+tools/          scaffold.py, context.py, codemap.py, ctxpack.py, validate.mjs, build.py, release.py, test_*.py, hooks/
 ```
 
 ## Commands
@@ -26,11 +27,17 @@ npm install && npm run build     # builds dist/public and dist/personal-<kit>, p
 python3 tools/build.py --public-only
 python3 tools/context.py init | decide "<d>" --why "<w>" --alt "<x>"
 python3 tools/codemap.py [root] --max-lines 200
+python3 tools/ctxpack.py "<task>" --path <file>   # context pack, run before coding
+python3 tools/test_risk.py && python3 tools/test_ctxpack.py
+python3 tools/release.py         # tests + build + scan + validate + local commit (never pushes)
 ```
 
 ## Outputs
 - `dist/public/`: generic Cursor plugin + Grok Bot skill (+ source zip). Contains only the blank kit template. The build fails if any term from any `kits/*/private-terms.txt`, an email address or a secret-looking string appears in it.
 - `dist/personal-<kit>/`: the same plus your kit at `references/kit/`. Keep it private.
+
+## Roadmap
+- v2.7 better retrieval (dependency-aware selection, explainable relevance scoring). v2.8 measurement (tokenizer adapter, local feedback JSONL). No vector DB. See core/FORGEX.md §11.
 
 ## License
 MIT, © FORGEX contributors. See [LICENSE](LICENSE).

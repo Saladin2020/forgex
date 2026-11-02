@@ -1,0 +1,12 @@
+{
+  "version": "2.6.0",
+  "modes": ["QUICK", "STANDARD", "GUARDED"],
+  "guardedGlobs": ["**/migrations/**", "**/auth/**", "**/.env*", "**/middleware.ts", "**/vercel.json", "**/drizzle.config.*", "**/prisma/schema.prisma",
+                   "**/payment*/**", "**/billing/**", "**/money/**", "**/secrets/**", "**/*secret*", "**/*.pem", "**/*.key"],
+  "guardedAreas": ["auth", "money", "db"],
+  "quickAreas": ["ui"],
+  "quickMaxPaths": 1,
+  "riskModeMapping": { "low": "QUICK", "medium": "STANDARD", "high": "GUARDED", "critical": "GUARDED" },
+  "unknownMode": "GUARDED",
+  "noPathsMode": "STANDARD"
+}

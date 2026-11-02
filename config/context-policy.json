@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/context-policy.schema.json",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "estimate": "chars/4",
   "budgets": { "QUICK": 1200, "STANDARD": 3500, "GUARDED": 7000 },
   "always": ["forgex/STATE.md"],
@@ -26,6 +26,7 @@
     "server-action": ["**/actions/**", "**/*action*.ts"],
     "test": ["**/*.test.*", "**/*.spec.*", "tests/**", "e2e/**"]
   },
+  "goldenMinScore": 2,
   "skip": ["**/node_modules/**", "**/dist/**", "**/.next/**", "forgex/tasks/**", "**/*.lock", "**/package-lock.json"],
   "skipKinds": { "QUICK": ["golden"] }
 }

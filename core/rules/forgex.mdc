@@ -1,9 +1,10 @@
 ---
-description: FORGEX v2.4 lean workflow (fast, correct, few tokens, machine-checked)
+description: FORGEX v2.6 lean workflow (fast, correct, few tokens, machine-checked)
 alwaysApply: true
 ---
 # FORGEX (lean)
-- Pick a mode from the highest risk: low → QUICK, medium → STANDARD, high or GUARDED files → GUARDED.
+- Pick a mode from the highest risk: low → QUICK, medium → STANDARD, high or GUARDED files → GUARDED. Never lower a mode; unsure → higher.
+- Before coding run `ctxpack.py "<task>" --path <file>` (forgex skill), read only `forgex/context-pack.md`, and say `context: pack <id> · <MODE> · <used>/<cap>`. No Python: follow the skill's manual fallback and say so.
 - Every task gets the small JSON contract from `scaffold.py <mode>`. Fill in values only, then validate. Never retype it as prose.
 - Design before you build. Split the work into small blocks, each with its own check, and start with the smallest working seed.
 - Make the smallest change. Run `git status` first and never touch user work. Build only REQUIRED work; note other ideas in one line.

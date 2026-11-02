@@ -25,24 +25,20 @@ const errs = (v) => (v.errors || []).map((e) => `${e.instancePath || "/"} ${e.me
 // ---- cross-field checks JSON Schema cannot express ----
 const projPolicy = path.resolve(process.cwd(), "forgex/policy.json");
 const POLICY = JSON.parse(fs.readFileSync(fs.existsSync(projPolicy) ? projPolicy : path.join(ROOT, "config/default-policy.json"), "utf8"));
-export function globToRegExp(g) {
-  let r = "";
-  for (let i = 0; i < g.length; i++) {
-    const c = g[i];
-    if (c === "*" && g[i + 1] === "*") { i++; if (g[i + 1] === "/") { i++; r += "(?:.*/)?"; } else r += ".*"; }
-    else if (c === "*") r += "[^/]*";
-    else if (c === "?") r += "[^/]";
-    else r += c.replace(/[.+^${}()|[\]\\]/g, "\\$&");
-  }
-  return new RegExp("^" + r + "$");
-}
-const GUARDED_RE = POLICY.guardedGlobs.map((g) => [g, globToRegExp(g)]);
+// Shared risk classifier: same rules/logic as tools/ctxpack.py (core/risk in source, references/risk when shipped).
+const RISK_DIR = [path.join(ROOT, "risk"), path.join(ROOT, "core/risk")].find((d) => fs.existsSync(path.join(d, "classifier.mjs")));
+const { classify, globToRegExp, RULES: RISK_RULES } = await import(new URL("file://" + path.join(RISK_DIR, "classifier.mjs")).href);
+export { globToRegExp };
+const EXTRA_GLOBS = POLICY.guardedGlobs || [];
+const GUARDED_RE = [...new Set([...RISK_RULES.guardedGlobs, ...EXTRA_GLOBS])].map((g) => [g, globToRegExp(g)]);
 function crossCheck(c) {
   const out = [];
-  if (c.mode !== "GUARDED") for (const p of c.touchedPaths || []) {
-    const norm = p.replace(/^\.\//, "");
-    const hit = GUARDED_RE.find(([, re]) => re.test(norm));
-    if (hit) out.push(`/touchedPaths "${p}" matches guardedGlob "${hit[0]}": risk under-rated, use GUARDED`);
+  if (typeof c.mode === "string") {
+    const r = classify({ mode: c.mode, paths: c.touchedPaths || [], risk: c.riskLevel ?? null, extraGlobs: EXTRA_GLOBS });
+    if (r.mode !== c.mode) {
+      const g = r.reasons.find((x) => x.includes("guarded glob"));
+      out.push(g ? `/touchedPaths ${g.replace(" matches guarded glob ", ` matches guardedGlob "`)}": risk under-rated, use ${r.mode}` : `/mode ${c.mode} under-rated (${r.reasons.join("; ")}): use ${r.mode}`);
+    }
   }
   const ids = (c.checks || []).map((k) => k.id).filter(Boolean);
   const dup = ids.filter((x, i) => ids.indexOf(x) !== i);

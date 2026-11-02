@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://forgex.local/schemas/v2/context-policy.schema.json",
-  "title": "FORGEX Context Policy v2.5",
+  "title": "FORGEX Context Policy v2.6",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "budgets", "always", "priority", "areas"],
@@ -22,6 +22,7 @@
     "areas": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["area", "keywords", "paths"],
       "properties": { "area": { "type": "string", "pattern": "^[a-z0-9-]+$" }, "keywords": { "type": "array", "items": { "type": "string" } }, "paths": { "$ref": "#/$defs/globs" } } } },
     "goldenByKind": { "type": "object", "additionalProperties": { "$ref": "#/$defs/globs" } },
+    "goldenMinScore": { "type": "integer", "minimum": 0, "description": "Golden example kept only if 3*touched-path matches + kind words in task >= this." },
     "skip": { "$ref": "#/$defs/globs" },
     "skipKinds": { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/kind" } } }
   }

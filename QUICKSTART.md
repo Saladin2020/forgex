@@ -19,7 +19,10 @@ No kit yet? Skip this; the agent falls back to the blank template and asks.
 Tell the agent: "start a new web app with FORGEX". It copies the kit profile into `AGENTS.md`, picks a look into `DESIGN.md`, runs `context.py init` + `codemap.py`, then opens only the block cards and golden examples it needs.
 
 ## 4. Every session
-- Start: agent runs `ctxpack.py "<task>" --path <file>` and reads only `forgex/context-pack.md` (capped: QUICK ~1.2k, STANDARD ~3.5k, GUARDED ~7k est. tokens). Tune with `forgex/context-policy.json`.
+- Start (before coding): agent runs `ctxpack.py "<task>" --path <file>`, reads only `forgex/context-pack.md` (capped: QUICK ~1.2k, STANDARD ~3.5k, GUARDED ~7k est. tokens) and tells you `context: pack cp-… · MODE · used/cap`. Tune with `forgex/context-policy.json`; add risky paths to `forgex/policy.json` `guardedGlobs`.
+- Mode: one shared risk classifier (`references/risk/`) for ctxpack and the validator. Your explicit mode is never lowered; auth/money/db or guarded paths always mean GUARDED; unknown → higher.
+- No Python on the machine? The agent follows the manual fallback in the skill and says `context: manual`.
+- Check it: `python3 tools/test_risk.py && python3 tools/test_ctxpack.py` (source repo).
 - End or handoff: agent rewrites `STATE.md`, logs choices with `context.py decide`, refreshes `codemap.py`.
 
 ## 5. Harvest patterns (end of each project)

@@ -1,4 +1,4 @@
-# FORGEX v2.5: Canonical Spec
+# FORGEX v2.6: Canonical Spec
 
 **Goal:** work fast, correctly and with few tokens. · Seed first, then grow (from a potted tree to a forest). · Single agent, no heavy QA by default.
 
@@ -71,4 +71,16 @@ Commit all three. They replace re-explaining the project every chat.
 ## 9. Context orchestration (lean by default)
 - `config/context-policy.json` (schema `schemas/context-policy.schema.json`; project override `forgex/context-policy.json`) maps task signals (keywords, touched globs, mode) to areas, and areas to what loads: STATE always, DECISIONS entries by `Tags`, kit cards by `Tags` (≤ `maxCards`), CODEMAP sections for touched dirs, golden files by file kind; `skip` globs and `skipKinds` (QUICK skips golden).
 - Caps per mode in estimated tokens (chars/4): QUICK 1200, STANDARD 3500, GUARDED 7000. Priority: state → decisions → cards → codemap → golden. Items that do not fit are skipped and listed with a reason; the pack never exceeds the cap.
-- `ctxpack.py "<task>" --path …` writes `forgex/context-pack.md`. Mode is inferred (auth/money/db or guarded glob → GUARDED; one UI path → QUICK) unless `--mode` is given. Tags are optional (`- **Tags:** a, b` on cards, `- Tags: a` on D-entries; `context.py decide --tag`); untagged entries still match by title words.
+- `ctxpack.py "<task>" --path …` writes `forgex/context-pack.md`. Mode comes from the shared risk classifier (§10). Tags are optional (`- **Tags:** a, b` on cards, `- Tags: a` on D-entries; `context.py decide --tag`); untagged entries still match by title words.
+- The pack opens with a YAML header `forgexContextPack:` (id `cp-…` = hash of the content, forgex/policy versions, mode + reasons, budget with estimator chars/4, selected and skipped items with reasons, warnings). The header is not counted against the cap. Golden examples load only if score (3 per touched path matching the kind + 1 per kind word in the task) ≥ `goldenMinScore` (default 2). Card slots: guarded areas first, then policy order, one core card per area until `maxCards`; extra core cards are skipped with a reason.
+- Errors exit 2 with a message: invalid policy, path outside the project root. A missing source file or no matched area is a warning, not an error.
+
+## 10. Risk classification (one source)
+- `core/risk/rules.json` + `classifier.py` / `classifier.mjs` (shipped as `references/risk/`). Both `ctxpack.py` and `validate.mjs` use it; `tools/test_risk.py` checks py/js parity on `cases.json`.
+- An explicit mode (`--mode` or contract `mode`) is a floor, never downgraded. Only hard signals raise it: a guarded glob or guarded area (auth, money, db) → GUARDED; `riskLevel` via the mapping. Without an explicit mode: no paths → STANDARD; one path in UI only → QUICK; else STANDARD.
+- Unknown mode or riskLevel → GUARDED, with a warning. Project `forgex/policy.json` `guardedGlobs` are added, never subtracted.
+
+## 11. Roadmap (deferred on purpose, to stay lean)
+- v2.7 Better retrieval: dependency-aware selection (bounded import depth), explainable deterministic relevance scoring beyond tags.
+- v2.8 Measurement: optional tokenizer adapter (exact counts when available, chars/4 fallback), local context feedback JSONL (privacy-safe, off switch).
+- Not planned: vector DB.

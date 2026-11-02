@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.6.0 (2026-11-02): reliability first
+- One risk classifier: `core/risk/rules.json` + `classifier.py` + `classifier.mjs` (shipped as `references/risk/`), used by both `ctxpack.py` and `validate.mjs`. Explicit mode is a floor (never downgraded); guarded globs/areas always escalate to GUARDED; unknown mode/riskLevel → GUARDED; no paths → STANDARD. Guarded globs add payments/billing/money/secrets/keys; project `forgex/policy.json` globs are added. `tools/test_risk.py` checks py/js parity (18 cases).
+- Workflow wiring: always-on rule, SKILL.md and `/forgex-start` run ctxpack before coding, state `context: pack <id> · MODE · used/cap`, and give a manual no-Python fallback.
+- ctxpack: YAML metadata header (pack id, forgex/policy versions, mode reasons, budget + estimator chars/4, selected/skipped with reasons, warnings; outside the cap); golden examples need `goldenMinScore` (default 2); card allocation rule (guarded areas first, one core card per area, extra core cards skipped with a reason); clear exit 2 on invalid policy or a path outside the project root; warnings for missing files, no matched area, no paths.
+- Edge-case tests in `test_ctxpack.py`: auth path, guarded glob, explicit STANDARD/GUARDED, multi-area, over budget, core cards > maxCards, no tags, no paths, missing file, invalid policy (2 kinds), path outside root (2 kinds), golden min score, metadata header + deterministic id. `release.py` runs both test files.
+- Deferred (roadmap in FORGEX.md §11): v2.7 dependency graph + relevance scoring; v2.8 tokenizer adapter + feedback JSONL. Contract schema unchanged.
+
 ## v2.5.0 (2026-11-02): context orchestration, lean by default
 - `config/context-policy.json` + `schemas/context-policy.schema.json`: task signals (keywords, path globs, mode) → areas → what to load; per-mode caps in est. tokens (QUICK 1200 / STANDARD 3500 / GUARDED 7000), priority order, `maxCards`, skip list, `skipKinds`. Project override `forgex/context-policy.json`.
 - `tools/ctxpack.py`: builds `forgex/context-pack.md` (STATE + matching DECISIONS, cards, CODEMAP sections, golden files), never over the cap, prints loaded/skipped with reasons, `--json` report.

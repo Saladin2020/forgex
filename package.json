@@ -1,6 +1,6 @@
 {
   "name": "forgex",
-  "version": "2.5.0",
+  "version": "2.6.0",
   "private": true,
   "type": "module",
   "description": "FORGEX v2: lean AI engineering workflow, packaged for Cursor and Grok Bot",

@@ -6,13 +6,22 @@
 Run from the project root. Picks, in policy priority order: forgex/STATE.md (always), DECISIONS entries
 whose Tags/title match the task's areas, kit cards by Tags, CODEMAP sections for touched dirs/areas,
 golden examples by file kind. Tokens are ESTIMATES (chars/4). The bundle never exceeds the cap;
-everything left out is listed with a reason. Policy: forgex/context-policy.json overrides the shipped one.
+everything left out is listed with a reason. Mode comes from the shared risk classifier
+(core/risk, same as validate.mjs). The pack starts with a YAML metadata header (id, versions, budget, selected,
+skipped, warnings) that is not counted against the cap; --json reports headerTokensEst. Policy: forgex/context-policy.json overrides the shipped one.
 """
-import argparse, fnmatch, json, re, sys
+import argparse, hashlib, json, re, sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 PKG = HERE.parent  # references/ (shipped) or repo root (source)
+sys.path.insert(0, str(PKG / "risk" if (PKG / "risk").is_dir() else PKG / "core/risk"))
+from classifier import classify, RULES  # noqa: E402  shared with validate.mjs (classifier.mjs)
+
+def fail(msg): print(f"ctxpack: error: {msg}", file=sys.stderr); sys.exit(2)
+def forgex_version():
+    try: return json.loads((PKG / "package.json").read_text())["version"]
+    except Exception: return "unknown"
 
 def est(s): return (len(s) + 3) // 4
 
@@ -33,8 +42,18 @@ def first(*cands):
 
 def load_policy(arg):
     p = first(arg, "forgex/context-policy.json", PKG / "config/context-policy.json")
-    if not p: sys.exit("context-policy.json not found")
-    return json.loads(p.read_text()), p
+    if not p: fail("context-policy.json not found")
+    try: pol = json.loads(p.read_text())
+    except (ValueError, OSError) as e: fail(f"invalid policy {p}: {e}")
+    if not isinstance(pol, dict): fail(f"invalid policy {p}: not an object")
+    miss = [k for k in ("budgets", "always", "priority", "areas") if k not in pol]
+    if miss: fail(f"invalid policy {p}: missing {', '.join(miss)}")
+    b = pol["budgets"]
+    if not isinstance(b, dict) or any(not isinstance(b.get(m), int) or b[m] < 100 for m in RULES["modes"]):
+        fail(f"invalid policy {p}: budgets need integer QUICK/STANDARD/GUARDED >= 100")
+    if not isinstance(pol["areas"], list) or any(not isinstance(a, dict) or not {"area", "keywords", "paths"} <= a.keys() for a in pol["areas"]):
+        fail(f"invalid policy {p}: each area needs area, keywords, paths")
+    return pol, p
 
 def kit_dir(arg):
     if arg: return Path(arg)
@@ -52,14 +71,24 @@ def areas_for(task, paths, pol):
         if why: found[a["area"]] = why
     return found
 
-def guess_mode(areas, paths):
-    risky = {"auth", "money", "db"} & set(areas)
-    try:
-        g = json.loads((PKG / "config/default-policy.json").read_text())["guardedGlobs"]
-    except Exception: g = []
-    if risky or any(hit(p, g) for p in paths): return "GUARDED"
-    if len(paths) <= 1 and set(areas) <= {"ui"}: return "QUICK"
-    return "STANDARD"
+def extra_globs():
+    """Project forgex/policy.json and shipped default-policy guardedGlobs add to the shared rules (union = conservative)."""
+    out = []
+    for f in (Path("forgex/policy.json"), PKG / "config/default-policy.json"):
+        try: out += json.loads(f.read_text()).get("guardedGlobs", [])
+        except Exception: pass
+    return out
+
+def check_paths(raw):
+    """Normalise to project-relative POSIX paths; reject anything outside the project root."""
+    root, out, warns = Path.cwd().resolve(), [], []
+    for p in raw:
+        q = Path(p); full = (q if q.is_absolute() else root / q).resolve()
+        try: rel = full.relative_to(root).as_posix()
+        except ValueError: fail(f"path outside project root: {p}")
+        if not full.exists(): warns.append(f"path not found (still used for risk): {rel}")
+        out.append(rel)
+    return out, warns
 
 def tags_of(text):
     m = re.search(r"^\s*-\s*\**Tags:?\**:?\s*(.+)$", text, re.M | re.I)
@@ -89,13 +118,17 @@ def cards(kit, areas, task, cap):
     # Reserve a slot per area for its core card (primary = first tag), then fill by score.
     prim = lambda t: (re.search(r"Tags:?\**:?\s*([^,\n]+)", t) or [None, ""])[1].strip().lower()
     picked = []
-    for ar in areas:
+    # Allocation rule: guarded areas first, then policy order; one core slot each until the cap is full.
+    order = sorted(areas, key=lambda x: (x not in RULES["guardedAreas"], list(areas).index(x)))
+    for ar in order:
         core = next((x for x in scored if prim(x[2]) == ar and x not in picked), None)
         if core and len(picked) < cap: picked.append(core)
     picked += [x for x in scored if x not in picked][: cap - len(picked)]
     picked.sort(key=lambda x: -x[0])
-    for s, c, _ in scored:
-        if all(c != y[1] for y in picked): skip.append((f"card {c.stem}", f"over maxCards={cap} (score {s})"))
+    for s, c, t in scored:
+        if all(c != y[1] for y in picked):
+            core = prim(t) in areas
+            skip.append((f"card {c.stem}", f"{'core card ' if core else ''}over maxCards={cap} (score {s})"))
     core_names = {x[1] for x in picked if prim(x[2]) in areas}
     return [("cards", f"card {c.stem}", t.strip(), f"tag score {s}" + (" · area core card" if c in core_names else "")) for s, c, t in picked], skip
 
@@ -117,15 +150,30 @@ def codemap(paths, areas, pol):
 KIND_WORDS = {"form-page": ["page", "form"], "api-route": ["api", "endpoint", "route"], "server-action": ["action", "mutation"], "test": ["test", "spec"]}
 
 def golden(kit, paths, task, pol):
+    """Score = 3 per touched path matching the kind's globs + 1 per kind word in the task; keep if >= goldenMinScore."""
     if not kit or not (kit / "golden").is_dir(): return [], []
-    w, keep, skip = words(task), [], []
+    w, keep, skip, need = words(task), [], [], pol.get("goldenMinScore", 2)
     for kind, globs in pol.get("goldenByKind", {}).items():
         f = kit / "golden" / f"{kind}.md"
         if not f.exists(): continue
-        if any(hit(p, globs) for p in paths) or any(f" {k} " in w for k in KIND_WORDS.get(kind, [])):
-            keep.append(("golden", f"golden {kind}", f.read_text().strip(), "file kind match"))
-        else: skip.append((f"golden {kind}", "file kind not touched"))
+        ph = sum(1 for p in paths if hit(p, globs)); kw = [k for k in KIND_WORDS.get(kind, []) if f" {k} " in w]
+        s = 3 * ph + len(kw)
+        why = f"golden score {s} (paths {ph}, words {','.join(kw) or '-'}; min {need})"
+        if s >= need: keep.append(("golden", f"golden {kind}", f.read_text().strip(), why))
+        else: skip.append((f"golden {kind}", why))
     return keep, skip
+
+def yq(s): return json.dumps(str(s), ensure_ascii=False)
+
+def meta_header(m):
+    L = ["---", "forgexContextPack:", f"  id: {m['id']}", f"  forgexVersion: {yq(m['forgexVersion'])}",
+         f"  policyVersion: {yq(m['policyVersion'])}", f"  policy: {yq(m['policy'])}", f"  mode: {m['mode']}",
+         "  modeReasons: [" + ", ".join(yq(r) for r in m["modeReasons"]) + "]",
+         f"  budget: {{capTokensEst: {m['cap']}, usedTokensEst: {m['used']}, estimator: \"chars/4\", headerExcluded: true}}",
+         "  selected:"] + [f"    - {{item: {yq(l)}, tokensEst: {t}, why: {yq(w)}}}" for l, t, w in m["selected"]] + \
+        ["  skipped:"] + [f"    - {{item: {yq(l)}, why: {yq(w)}}}" for l, w in m["skipped"]] + \
+        ["  warnings: [" + ", ".join(yq(x) for x in m["warnings"]) + "]", "---", ""]
+    return "\n".join(L)
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("task"); ap.add_argument("--path", action="append", default=[])
@@ -133,10 +181,13 @@ def main():
     ap.add_argument("--out", default="forgex/context-pack.md"); ap.add_argument("--json", action="store_true"); ap.add_argument("--print", action="store_true")
     a = ap.parse_args()
     pol, pol_path = load_policy(a.policy); kit = kit_dir(a.kit)
-    skipped = [(p, "policy skip list") for p in a.path if hit(p, pol.get("skip", []))]
-    paths = [p for p in a.path if not hit(p, pol.get("skip", []))]
+    allp, warnings = check_paths(a.path)
+    skipped = [(p, "policy skip list") for p in allp if hit(p, pol.get("skip", []))]
+    paths = [p for p in allp if not hit(p, pol.get("skip", []))]
     areas = areas_for(a.task, paths, pol)
-    mode = a.mode or guess_mode(areas, paths)
+    if not areas: warnings.append("no area matched (no tags/keywords): only STATE, touched CODEMAP and golden by path")
+    risk = classify(mode=a.mode, paths=allp, areas=list(areas), extra_globs=extra_globs())
+    mode = risk["mode"]; warnings += risk["warnings"]
     cap = pol["budgets"][mode]; ncards = pol.get("maxCards", {}).get(mode, 3)
     cand = {"state": [], "decisions": [], "cards": [], "codemap": [], "golden": []}
     for g in pol["always"]:
@@ -158,15 +209,22 @@ def main():
                 room = (cap - used - 20) * 4; block = block[:room] + "\n…(truncated to budget)\n"; t = est(block)
                 used += t; chosen.append((label + " (truncated)", t, why)); body.append(block)
             else: skipped.append((label, f"over budget ({t} est. tokens, {cap - used} left)"))
-    bundle = head + "".join(body)
-    assert est(bundle) <= cap, "budget invariant broken"
+    content = head + "".join(body)
+    assert est(content) <= cap, "budget invariant broken"
+    pid = "cp-" + hashlib.sha1(content.encode()).hexdigest()[:10]
+    meta = {"id": pid, "forgexVersion": forgex_version(), "policyVersion": pol.get("version", "unknown"), "policy": str(pol_path),
+            "mode": mode, "modeReasons": risk["reasons"], "cap": cap, "used": est(content), "selected": chosen, "skipped": skipped, "warnings": warnings}
+    bundle = meta_header(meta) + content
     out = Path(a.out); out.parent.mkdir(parents=True, exist_ok=True); out.write_text(bundle)
-    rep = {"mode": mode, "capTokensEst": cap, "usedTokensEst": est(bundle), "areas": areas, "policy": str(pol_path),
+    rep = {"packId": pid, "forgexVersion": meta["forgexVersion"], "policyVersion": meta["policyVersion"], "estimator": "chars/4",
+           "modeReasons": risk["reasons"], "warnings": warnings, "headerTokensEst": est(bundle) - est(content), "mode": mode, "capTokensEst": cap, "usedTokensEst": est(content), "areas": areas, "policy": str(pol_path),
            "kit": str(kit) if kit else None, "loaded": [{"item": l, "tokensEst": t, "why": w} for l, t, w in chosen],
            "skipped": [{"item": l, "why": w} for l, w in skipped], "bundle": str(out)}
     if a.json: print(json.dumps(rep, indent=2, ensure_ascii=False))
     else:
-        print(f"mode {mode} · {rep['usedTokensEst']}/{cap} est. tokens (chars/4) · areas: {', '.join(areas) or '-'}")
+        print(f"pack {pid} · mode {mode} · {rep['usedTokensEst']}/{cap} est. tokens (chars/4) · areas: {', '.join(areas) or '-'}")
+        for r in risk["reasons"]: print(f"  risk: {r}")
+        for x in warnings: print(f"  warning: {x}")
         for l, t, w in chosen: print(f"  + {l:32} {t:5}  {w}")
         for l, w in skipped: print(f"  - {l:32}        {w}")
         print(f"bundle: {out}  (read only this file)")
