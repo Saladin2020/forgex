@@ -1,5 +1,8 @@
 # Changelog
 
+## v2.9.1 (2026-11-03): README docs
+- README: badges, "Why FORGEX" table, commands cheat sheet, and four mermaid diagrams (overview, risk modes, light planning, cross-chat resume). No code changes.
+
 ## v2.9.0 (2026-11-03): light planning, harvest, style capture
 - Planning: `core/templates/ROADMAP.md` + `tools/roadmap.py` via `tools/forgex.py`. `forgex.py plan "<goal>"` writes `forgex/roadmap.json` + `forgex/ROADMAP.md` (3-5 milestones with outcomes; slices of 1-3 files, own test, `dependsOn`, mode from the risk classifier, never lower). `plan --check` rejects placeholders, cycles, >3 files, missing deps/tests, ≤3 slices, wrong milestone count, a non-walkable first slice. `forgex.py next` writes the ready slice into STATE Plan; `slice done <id> --check-cmd` marks done only if the test passes. Only for >3 slices; QUICK/single tasks skip it.
 - ctxpack: new `roadmap` kind loads only the current + next slice (skipped in QUICK; policy priority + schema updated).

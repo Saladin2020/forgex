@@ -1,14 +1,100 @@
 # FORGEX v2.9: Lean AI Engineering System
 
+![version](https://img.shields.io/badge/version-2.9.1-b4532f) ![license](https://img.shields.io/badge/license-MIT-blue) ![python](https://img.shields.io/badge/python-3.9%2B-3776ab) ![deps](https://img.shields.io/badge/deps-stdlib%20only-2e7d32)
+
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 
-FORGEX helps AI coding agents (Cursor, Grok Bot, any agent that reads Markdown) work **fast, correctly and with few tokens**:
-- **Risk modes:** QUICK / STANDARD / GUARDED, sized to risk: QUICK needs no contract; STANDARD/GUARDED get a small machine-checked JSON contract (`tools/scaffold.py`, `tools/validate.py` pure Python or `tools/validate.mjs`). GUARDED only when the task really touches auth/session/authz or ledger/balance writes, schema/migrations, or secrets/env; login/money only in UI copy or display stays STANDARD.
-- **Lego blocks:** work is split into blocks with interfaces and built seed-first; seams are checked once.
-- **Context files:** `STATE.md` (with a saved Plan: `context.py close` before a chat ends, `context.py resume` first in a new one), tagged `DECISIONS.md`, and a sharded JSON CODEMAP with an import graph and symbol index, so a new chat or bot picks up where the last stopped without re-reading the repo.
-- **House kits:** your stack, design, reusable feature cards and golden code examples, so new apps follow your style without retyping it.
+FORGEX helps AI coding agents (Cursor, Grok Bot, any agent that reads Markdown) work **fast, correctly and with few tokens**: risk-sized modes, a small context pack instead of the whole repo, a saved plan across chats, and your own house kit of reusable cards.
 
-New here? Read **[QUICKSTART.md](QUICKSTART.md)**. Thai install guide: [INSTALL-TH.md](INSTALL-TH.md). The spec: [core/FORGEX.md](core/FORGEX.md).
+New here? Read **[QUICKSTART.md](QUICKSTART.md)** · Thai guide: **[INSTALL-TH.md](INSTALL-TH.md)** · Spec: [core/FORGEX.md](core/FORGEX.md)
+
+## Why FORGEX
+| | Without FORGEX | With FORGEX |
+|---|---|---|
+| Context | Agent re-reads the repo every chat | `ctxpack` loads STATE, tagged decisions, graph neighbours and matching cards within a token cap |
+| Risk | Same ceremony for a CSS fix and a ledger write | QUICK / STANDARD / GUARDED from one classifier, never lowered |
+| New chat | "Where were we?" | `context.py resume` prints the saved Plan, continue step 1 |
+| Big features | One huge diff | Roadmap of 1-3 file slices, each with its own test |
+| Style | Retyped every project | House kit cards, golden examples, `style capture` drafts |
+| Claims | "Tests pass" (unrun) | Contracts validated, tests must call real code |
+
+## How it works
+```mermaid
+flowchart LR
+  T["Task"] --> R{"Risk classifier"}
+  R -->|"one reversible file"| Q["QUICK"]
+  R -->|"several files, API, data shape"| S["STANDARD"]
+  R -->|"auth, ledger, schema, secrets"| G["GUARDED"]
+  Q --> P
+  S --> P
+  G --> P
+  subgraph P["ctxpack: small context pack"]
+    P1["STATE.md"]
+    P2["DECISIONS.md by tag"]
+    P3["CODEMAP graph and symbols"]
+    P4["House kit cards"]
+  end
+  P --> B["Agent builds one slice"]
+  B --> V["Tests and validate"]
+  V --> C["Close: STATE Plan and token log"]
+```
+
+## Risk modes
+```mermaid
+flowchart TD
+  A["Task text and touched paths"] --> B{"Explicit GUARDED or guarded glob? (secret, env, migration, auth code)"}
+  B -->|"yes"| G["GUARDED"]
+  B -->|"no"| C{"Real touch? (verify session, role enforce, post to ledger, update balance, schema change)"}
+  C -->|"yes"| G
+  C -->|"no"| D{"Login or money only in UI? (page, button, styling, display)"}
+  D -->|"yes"| S["STANDARD"]
+  D -->|"no"| E{"One reversible file, low risk?"}
+  E -->|"yes"| Q["QUICK"]
+  E -->|"no"| S
+```
+Unsure always goes higher; a mode is never lowered.
+
+## Light planning (more than 3 slices only)
+```mermaid
+flowchart LR
+  G["forgex plan goal"] --> M["ROADMAP: 3 to 5 milestones with outcomes"]
+  M --> S["Slices: lego blocks of 1 to 3 files, own test, depends_on, mode"]
+  S --> N["forgex next: ready slice into STATE Plan"]
+  N --> B["Build and test"]
+  B --> D["slice done id"]
+  D -->|"more slices"| N
+  D -.->|"optional, human confirms"| H["harvest to personal kit"]
+```
+`plan --check` rejects cycles, slices over 3 files, missing deps or tests, and a first slice that is not walkable end to end. QUICK and single tasks skip planning.
+
+## Cross-chat resume
+```mermaid
+sequenceDiagram
+  participant A as Chat 1
+  participant F as forgex folder
+  participant B as Chat 2
+  A->>F: context.py close --now status --next step
+  Note over F: STATE.md keeps Now and numbered Plan
+  B->>F: context.py resume
+  F-->>B: Plan step 1 first
+  B->>B: ctxpack, then continue Plan step 1 only
+```
+
+## Commands cheat sheet
+| Goal | Command |
+|---|---|
+| Context pack before coding | `python3 tools/ctxpack.py "<task>" --path <file>` |
+| Start / save / resume context | `python3 tools/context.py init` · `close --now "…" --next "…"` · `resume` · `check` |
+| Record a decision | `python3 tools/context.py decide "<d>" --why "<w>" --tag <area>` |
+| Code map, graph, symbols | `python3 tools/codemap.py` · `related <file>` · `symbol <name>` |
+| Contract for STANDARD/GUARDED | `python3 tools/scaffold.py standard\|guarded <id> "<goal>"` then `validate.py` |
+| Plan a feature | `python3 tools/forgex.py plan "<goal>"` · `plan --check` · `next` · `slice done <id> --check-cmd "<test>"` |
+| Harvest kit cards | `python3 tools/forgex.py harvest <slice-id>` · `--confirm <draft> --kit kits/<you>` |
+| Capture a look | `python3 tools/forgex.py style capture <image-or-url...>` |
+| Token log and report | `python3 tools/tokens.py log …` · `report` |
+| Build both packages | `npm install && npm run build` or `python3 tools/build.py --public-only` |
+| All tests | `python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py && python3 tools/test_plan.py` |
+| Release locally (never pushes) | `python3 tools/release.py` |
 
 ## Layout
 ```
@@ -20,21 +106,6 @@ config/         default-policy.json, kit.example.json (copy to kit.json to pick 
 schemas/ examples/ targets/cursor/ extras/
 bench/          A/B test kit: FORGEX vs no FORGEX (README in Thai, tasks, starter, score.py)
 tools/          scaffold.py, context.py, codemap.py, ctxpack.py, tokens.py, validate.py, validate.mjs, build.py, release.py, test_*.py, hooks/
-```
-
-## Commands
-```bash
-npm install && npm run build     # builds dist/public and dist/personal-<kit>, privacy-scans public, validates both
-python3 tools/build.py --public-only
-python3 tools/context.py init | decide "<d>" --why "<w>" --tag <area> | close --now "<status>" --next "<step>" | resume | check
-python3 tools/codemap.py [root]                  # forgex/codemap/*.json; codemap.py related <file> | symbol <name>
-python3 tools/tokens.py log --task T --classifier-mode M --actual-mode M [--tokens-in N --tokens-out N --source cursor-usage] | report
-python3 tools/ctxpack.py "<task>" --path <file>   # context pack, run before coding
-python3 tools/forgex.py plan "<goal>" | plan --check | next | slice done <id> [--check-cmd "<test>"]   # light roadmap (>3 slices only)
-python3 tools/forgex.py harvest <slice-id> [--confirm <draft> --kit kits/<you>]   # suggest kit cards; human confirms, personal kit only
-python3 tools/forgex.py style capture <image-or-url...>   # draft style.json, DESIGN.md, ui cards, visual checklist
-python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py && python3 tools/test_plan.py
-python3 tools/release.py         # tests + build + scan + validate + local commit (never pushes)
 ```
 
 ## Outputs
