@@ -29,6 +29,8 @@ cd bench-B && git init -q && git add -A && git commit -qm start && cd ..
 - `rounds`: จำนวนข้อความที่คุณพิมพ์ (prompt แรก = 1)
 - `minutes`: เวลาจาก prompt แรกถึงเสร็จ
 - `reexplained`: 1 ถ้าต้องอธิบายงานซ้ำ (สำคัญใน T6)
+- (v2.8) `tokensIn` / `tokensOut`: ตัวเลขจริงจาก Cursor Usage (input / output แยกกัน) แล้วใส่ `tokenSource` = `cursor-usage` ถ้านับเองด้วย `tokens.py count` ที่ไม่มี tiktoken ให้ใส่ `chars/4` ซึ่งเป็นแค่ค่าประมาณ จะไม่ถูกนับเป็นโทเคนจริง
+- (v2.8) `classifierMode`: โหมดที่ ctxpack ให้ (ฝั่ง B ดูจากบรรทัด `context: pack … · MODE`) และ `actualMode`: โหมดที่งานนั้นต้องใช้จริง ถ้าเว้นว่างจะใช้โหมดที่คาดไว้ใน `tasks/checks.json`
 
 ## 5. ให้คะแนน
 ```bash
@@ -36,6 +38,8 @@ python3 score.py --a bench-A --b bench-B --results results.csv --out report.md
 ```
 score.py ตรวจแบบอัตโนมัติจากโฟลเดอร์สุดท้ายของแต่ละฝั่งตาม `tasks/checks.json` (grep หาสิ่งที่ต้องมี/ต้องไม่มี เช่นการคิดเงินด้วย float, `auth()` ใน API, maker≠checker, ไฟล์ migration, design token ตาม `style.json`, และ `npm test` ถ้ามี node_modules) แล้วรวมกับ results.csv เป็นตาราง markdown พร้อมผู้ชนะแต่ละตัวชี้วัด  
 **B ชนะจริง** เมื่อผ่าน check ได้ไม่น้อยกว่า A และชนะตัวชี้วัดส่วนใหญ่ ทำซ้ำ 2-3 รอบก่อนสรุป
+
+(v2.8) รายงานมีตาราง **Real tokens + false GUARDED** ซึ่งรวมโทเคนจริงแยกจากค่าประมาณ และบอกอัตรา false GUARDED คืองานที่ classifier ให้ GUARDED แต่จริง ๆ ต้องการแค่ STANDARD หรือ QUICK
 
 ## ไฟล์
 - `tasks/T1…T6.md` prompt + เกณฑ์ผ่าน (QUICK ×1, STANDARD ×2, GUARDED ×3) · `tasks/checks.json` เกณฑ์ที่เครื่องตรวจ

@@ -2,6 +2,7 @@
 """FORGEX contract validator, pure Python (stdlib only, no ajv/Node needed). Same verdicts as validate.mjs.
   validate.py forgex/tasks/<id>.json [...]   validate contracts (exit 1 on failure)
   validate.py --self-test                    run every examples/contracts + stubs file against its expected verdict
+  validate.py --context [--blocks DIR ...]   forgex/STATE.md has a filled Plan + Updated; every DECISIONS entry and card has Tags
 Schema: schemas/task-contract.schema.json via a small JSON Schema 2020-12 subset (type, enum, const, required,
 properties, additionalProperties, items, contains, minItems, minimum, minLength, maxLength, pattern, allOf, anyOf,
 oneOf, not, if/then/else, local $ref, boolean schemas). Cross-checks use the shared risk classifier (core/risk)."""
@@ -16,6 +17,8 @@ HERE = Path(__file__).resolve().parent
 PKG = HERE.parent
 sys.path.insert(0, str(PKG / "risk" if (PKG / "risk").is_dir() else PKG / "core/risk"))
 from classifier import classify  # noqa: E402
+sys.path.insert(0, str(HERE))
+import context as ctx  # noqa: E402  STATE plan + tag checks (shared with context.py check)
 
 TYPES = {"object": dict, "array": list, "string": str, "boolean": bool, "null": type(None)}
 
@@ -95,14 +98,33 @@ def validate(obj):
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     fails = 0
+    if "--context" in sys.argv:
+        bl = [sys.argv[i + 1] for i, x in enumerate(sys.argv[:-1]) if x == "--blocks"]
+        sp, dp = Path("forgex/STATE.md"), Path("forgex/DECISIONS.md")
+        e = ctx.state_problems(sp.read_text(encoding="utf-8")) if sp.exists() else ["forgex/STATE.md missing"]
+        if dp.exists(): e += [f"DECISIONS {d}: missing Tags" for d in ctx.decisions_untagged(dp.read_text(encoding="utf-8"))]
+        for b in bl: e += [f"card {b}/{c}: missing Tags" for c in ctx.cards_untagged(b)]
+        print("\n".join(f"FAIL  {x}" for x in e) or "PASS  context (plan saved, all tagged)"); sys.exit(1 if e else 0)
     if "--self-test" in sys.argv:
         ex = PKG / "examples"
+        for b in [PKG / "house/blocks", PKG / "core/house/blocks", PKG / "kit/blocks", *(PKG / "kits").glob("*/blocks")]:
+            if b.is_dir():
+                u = ctx.cards_untagged(b); fails += bool(u)
+                print(("PASS " if not u else "FAIL ") + f"cards tagged: {b.relative_to(PKG)}" + (f" -> untagged {u}" if u else ""))
+        good_state = "# STATE\nUpdated: 2026-11-03 10:00 +07 by chat-1\n## Now\n- Status: half done\n## Plan\n1. add approve route in app/api/approve/route.ts\n"
+        for name, t, want in [("state with plan", good_state, True), ("state template (placeholders)", (ctx.TPL / "STATE.md").read_text(encoding="utf-8"), False),
+                              ("state without plan", "# STATE\nUpdated: 2026-11-03 by x\n## Now\n- x\n", False),
+                              ("legacy '## Next steps'", good_state.replace("## Plan", "## Next steps"), True)]:
+            ok = (not ctx.state_problems(t)) == want; fails += not ok; print(("PASS " if ok else "FAIL ") + f"context {name}")
+        for name, t, want in [("decision tagged", "## D-1 · d · x\n- Why: y\n- Tags: auth\n", []), ("decision untagged", "## D-1 · d · x\n- Why: y\n", ["D-1"])]:
+            ok = ctx.decisions_untagged(t) == want; fails += not ok; print(("PASS " if ok else "FAIL ") + f"context {name}")
         if not ex.is_dir(): print("self-test: no examples/ here (shipped toolkit); skipped"); return
         cases = [(f, True) for d in ("contracts/valid", "stubs") for f in sorted((ex / d).glob("*.json"))] + [(f, False) for f in sorted((ex / "contracts/invalid").glob("*.json"))]
         for f, want in cases:
             e = validate(load(f)); good = (not e) == want; fails += not good
             print(("PASS " if good else "FAIL ") + f"{f.relative_to(ex)} {'valid' if want else 'rejected: ' + (e[0] if e else 'NOT REJECTED')}" + ("" if good or want else "") + ("" if good or not want else f" -> {e[:2]}"))
-        print(f"\n{len(cases) - fails}/{len(cases)} contract examples as expected"); sys.exit(1 if fails else 0)
+        bad = sum(1 for f, want in cases if (not validate(load(f))) != want)
+        print(f"\n{len(cases) - bad}/{len(cases)} contract examples as expected; {fails - bad} context/tag failures"); sys.exit(1 if fails else 0)
     if not args: sys.exit(__doc__)
     for f in args:
         try: e = validate(load(f))

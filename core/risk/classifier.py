@@ -2,7 +2,7 @@
 classify(mode=None, paths=(), areas=(), risk=None, extra_globs=(), task="") -> {"mode", "derived", "reasons", "warnings", "writes"}
 GUARDED only for hard signals: a guarded glob (schema/migrations, auth config, secrets, env, deploy config), a write
 signal in the task text (money-write, schema-change, authz-change), riskLevel high/critical, or an explicit GUARDED.
-Read-only/display wording ("show", "list", "แสดง") cancels money/authz write signals (never schema-change).
+v2.8: a kind fires on a strong phrase or noun+verb (nouns alone never). Display/UI words cancel noun+verb only.
 Area keywords alone (auth, money, db) never escalate. Explicit mode is a floor; unknown data -> more conservative."""
 import json, re
 from pathlib import Path
@@ -29,11 +29,16 @@ def _has(text, k):
     return re.search(r"(?<![a-z0-9])" + re.escape(k) + r"(?![a-z0-9])", text) is not None
 
 def write_signals(task):
+    """Real-touch signals per kind: a strong phrase, or noun AND verb. Display/UI wording cancels noun+verb only."""
     t = (task or "").lower()
-    found = {kind: [k for k in kws if _has(t, k)] for kind, kws in RULES["writeSignals"].items()}
-    found = {k: v for k, v in found.items() if v}
-    ro = [k for k in RULES["readOnlySignals"] if _has(t, k)]
-    if ro: found = {k: v for k, v in found.items() if k in RULES["readOnlyCannotSuppress"]}
+    ro = [k for k in RULES["displaySignals"] + RULES["uiSignals"] if _has(t, k)]
+    found = {}
+    for kind, s in RULES["touchSignals"].items():
+        hits = [k for k in s["strong"] if _has(t, k)]
+        if not hits and not ro:
+            n = [k for k in s["nouns"] if _has(t, k)]; v = [k for k in s["verbs"] if _has(t, k)]
+            if n and v: hits = n[:2] + v[:1]
+        if hits: found[kind] = hits
     return found, ro
 
 def classify(mode=None, paths=(), areas=(), risk=None, extra_globs=(), task=""):

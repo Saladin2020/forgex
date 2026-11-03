@@ -210,7 +210,7 @@
   {
     "name": "login decision change",
     "in": {
-      "task": "fix login",
+      "task": "fix login: verify session on each request",
       "paths": [
         "src/app/login/page.tsx"
       ],
@@ -284,7 +284,7 @@
     "name": "explicit QUICK on login decision escalates",
     "in": {
       "mode": "QUICK",
-      "task": "fix login",
+      "task": "fix login: verify session on each request",
       "paths": [
         "src/app/login/page.tsx"
       ]
@@ -351,5 +351,365 @@
       ]
     },
     "mode": "GUARDED"
+  },
+  {
+    "name": "bench: show balance on dashboard",
+    "in": {
+      "task": "show balance on dashboard",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "bench: login page styling",
+    "in": {
+      "task": "login page styling",
+      "paths": [
+        "src/app/login/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "bench: members page with login button",
+    "in": {
+      "task": "members page with login button",
+      "paths": [
+        "src/app/members/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "bench: payment history list",
+    "in": {
+      "task": "payment history list for members",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "bench: 125.75 display bug",
+    "in": {
+      "task": "fix 125.75 shown as 125.7 on loan page",
+      "paths": [
+        "lib/money.ts"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "login button colour",
+    "in": {
+      "task": "change login button color to accent",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "password field label",
+    "in": {
+      "task": "password field label text in Thai",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "logout link in header",
+    "in": {
+      "task": "add logout link to header",
+      "paths": [
+        "components/Header.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "balance card",
+    "in": {
+      "task": "balance card on home",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "transfer form layout",
+    "in": {
+      "task": "transfer form layout spacing",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "credit noun alone",
+    "in": {
+      "task": "credit limit tooltip",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "role noun alone",
+    "in": {
+      "task": "role badge next to name",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "thai show balance",
+    "in": {
+      "task": "แสดงยอดคงเหลือบนแดชบอร์ด",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "thai login button",
+    "in": {
+      "task": "ปุ่มเข้าสู่ระบบสีใหม่",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "thai login page text",
+    "in": {
+      "task": "แก้ข้อความหน้า ล็อกอิน",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "session noun alone",
+    "in": {
+      "task": "session timeout banner",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
+  },
+  {
+    "name": "2fa strong",
+    "in": {
+      "task": "add 2FA with TOTP to staff login",
+      "paths": [
+        "src/server/totp.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "hash password",
+    "in": {
+      "task": "hash password with argon2id",
+      "paths": [
+        "src/server/password.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "verify login",
+    "in": {
+      "task": "verify login credentials against db",
+      "paths": [
+        "src/server/users.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "role check enforce",
+    "in": {
+      "task": "enforce role permission on approve route",
+      "paths": [
+        "src/app/api/approve/route.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "revoke session",
+    "in": {
+      "task": "revoke session when password changes",
+      "paths": [
+        "src/server/users.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "maker checker",
+    "in": {
+      "task": "maker-checker approve then ledger post",
+      "paths": [
+        "src/server/transfer.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "post to ledger",
+    "in": {
+      "task": "post to ledger on approval",
+      "paths": [
+        "src/server/loans.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "debit account",
+    "in": {
+      "task": "debit member account on repayment",
+      "paths": [
+        "src/server/loans.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "update balance",
+    "in": {
+      "task": "update balance after deposit",
+      "paths": [
+        "src/server/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "thai ledger",
+    "in": {
+      "task": "ลงบัญชีเมื่ออนุมัติ",
+      "paths": [
+        "src/server/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "thai otp",
+    "in": {
+      "task": "เพิ่ม OTP ตอนเข้าสู่ระบบ",
+      "paths": [
+        "src/server/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "thai transfer",
+    "in": {
+      "task": "โอนเงินระหว่างสมาชิก",
+      "paths": [
+        "src/server/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "schema strong despite display",
+    "in": {
+      "task": "show new column; add column status",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "migration despite ui words",
+    "in": {
+      "task": "migration for button colour table",
+      "paths": [
+        "src/x.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "strong beats ui words",
+    "in": {
+      "task": "login page styling plus TOTP verify",
+      "paths": [
+        "src/app/x/page.tsx"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "ledger path",
+    "in": {
+      "task": "fix rounding",
+      "paths": [
+        "src/server/ledger/post.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "middleware path",
+    "in": {
+      "task": "tweak header text",
+      "paths": [
+        "middleware.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "env path",
+    "in": {
+      "task": "rename var",
+      "paths": [
+        ".env.local"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "session path",
+    "in": {
+      "task": "refactor",
+      "paths": [
+        "src/lib/session.ts"
+      ]
+    },
+    "mode": "GUARDED"
+  },
+  {
+    "name": "'fix login' on a page alone is STANDARD (v2.8)",
+    "in": {
+      "task": "fix login",
+      "paths": [
+        "src/app/login/page.tsx"
+      ]
+    },
+    "mode": "STANDARD"
   }
 ]

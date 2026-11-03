@@ -99,16 +99,20 @@ def tags_of(text):
     return {t.strip().lower() for t in m.group(1).split(",")} if m else set()
 
 def decisions(areas, task):
+    """v2.8: select by Tags (tag in task areas, or tag word in the task). Untagged legacy entries fall back to title
+    words and are flagged (validate.py --context makes Tags mandatory)."""
     p = Path("forgex/DECISIONS.md")
     if not p.exists(): return [], []
     parts = re.split(r"(?m)^(?=## D-\d+)", p.read_text(encoding="utf-8"))
     keep, skip, w = [], [], words(task)
     for e in parts[1:]:
         head = e.splitlines()[0]; tg = tags_of(e)
-        why = (tg & set(areas)) or {x for x in re.findall(r"[a-z]{4,}", head.lower()) if f" {x} " in w}
-        (keep if why else skip).append((e.strip(), head, sorted(why)))
-    return [("decisions", f"DECISIONS {h.split('·')[0].strip('# ').strip()}", e, f"tags/title match {', '.join(y)}") for e, h, y in keep], \
-           [(f"DECISIONS {h.split('·')[0].strip('# ').strip()}", "no matching tag/area") for _, h, _ in skip]
+        if tg: why = sorted(tg & set(areas) | {x for x in tg if words(x) in w}); how = "tag match"
+        else: why = sorted({x for x in re.findall(r"[a-z]{4,}", head.lower()) if f" {x} " in w}); how = "UNTAGGED title-word fallback"
+        lab = f"DECISIONS {head.split('·')[0].strip('# ').strip()}"
+        if why: keep.append(("decisions", lab, e.strip(), f"{how} {', '.join(why)}"))
+        else: skip.append((lab, "no matching tag/area" if tg else "untagged (add '- Tags:'), no title match"))
+    return keep, skip
 
 UI_WORDS = ("page", "screen", "component", "ui", "form", "หน้า", "ปุ่ม", "ฟอร์ม")
 def is_ui_task(task, paths, pol):
@@ -125,7 +129,7 @@ def cards(kit, areas, task, cap, ui=False):
         if c.name.startswith("_") or c.name == "INDEX.md": continue
         t = c.read_text(encoding="utf-8"); tg = tags_of(t)
         s = 3 * len(tg & set(areas)) + sum(1 for x in tg if f" {x} " in w) + (2 if words(c.stem.replace("-", " ")).strip() in w else 0)
-        (scored if s else skip).append((s, c, t) if s else (f"card {c.stem}", "tags not in task areas"))
+        (scored if s else skip).append((s, c, t) if s else (f"card {c.stem}", "tags not in task areas" if tg else "untagged card (add '- **Tags:**')"))
     scored.sort(key=lambda x: -x[0])
     # Reserve a slot per area for its core card (primary = first tag), then fill by score.
     prim = lambda t: (re.search(r"Tags:?\**:?\s*([^,\n]+)", t) or [None, ""])[1].strip().lower()
@@ -151,18 +155,44 @@ def cards(kit, areas, task, cap, ui=False):
     sty_c = picked[0][1] if ui and picked and tags_of(picked[0][2]) & STYLE_TAGS else None
     return [("cards", f"card {c.stem}", t.strip(), f"tag score {s}" + (" · area core card" if c in core_names else "") + (" · UI style slot" if c == sty_c else "")) for s, c, t in picked], skip
 
-def codemap(paths, areas, pol):
-    p = Path("forgex/CODEMAP.md")
-    if not p.exists(): return [], [("CODEMAP", "forgex/CODEMAP.md missing (run codemap.py)")]
-    secs = re.split(r"(?m)^(?=## )", p.read_text(encoding="utf-8"))
+sys.path.insert(0, str(HERE))
+import codemap as cmap  # noqa: E402
+import tokens  # noqa: E402  tokenizer adapter (tiktoken if installed, else chars/4 flagged estimate)
+# codemap  sharded JSON index + import graph + symbol index (v2.8)
+
+def codemap(paths, areas, pol, task="", hops=2, max_related=12):
+    """v2.8: forgex/codemap/*.json -> touched files, 1-2 hop import neighbours, symbols named in the task.
+    Falls back to v2.7 CODEMAP.md sections (touched dir / area keyword) when no JSON index exists."""
+    cm = cmap.load(".")
+    notes = []
+    mdp = Path("forgex/CODEMAP.md")
+    if mdp.exists() and "## Notes" in (t := mdp.read_text(encoding="utf-8")):
+        notes = [("codemap", "CODEMAP Notes", "## Notes" + t.split("## Notes", 1)[1].rstrip(), "notes")]
+    if cm:
+        line = lambda f, why: f"- `{f}`" + (f": {', '.join((cmap.shard_entry(cm, f) or {}).get('symbols', [])[:6])}" if (cmap.shard_entry(cm, f) or {}).get("symbols") else "") + f"  ({why})"
+        keep, skip = [], []
+        touched = [p for p in paths if cmap.shard_entry(cm, p) is not None]
+        if touched: keep.append(("codemap", "CODEMAP touched", "\n".join(line(f, "touched") for f in touched), "touched files (index)"))
+        rel = sorted(cmap.related(cm, touched, hops).items(), key=lambda x: (x[1], x[0]))
+        if rel:
+            shown = rel[:max_related]
+            keep.append(("codemap", "CODEMAP related (import graph)", "\n".join(line(f, f"{h} hop") for f, h in shown), f"import graph ≤{hops} hops: {len(rel)} files"))
+            if len(rel) > max_related: skip.append((f"CODEMAP related +{len(rel) - max_related}", f"over maxRelated={max_related}"))
+        sh = cmap.symbol_hits(cm, task)
+        if sh:
+            keep.append(("codemap", "CODEMAP symbols", "\n".join(f"- `{k}` → {', '.join(v[:3])}" for k, v in sh.items()), f"symbols named in task: {', '.join(list(sh)[:4])}"))
+        if not keep: skip.append(("CODEMAP index", "no touched/related file or named symbol"))
+        return keep + notes, skip
+    if not mdp.exists(): return [], [("CODEMAP", "forgex/codemap/index.json missing (run codemap.py)")]
+    secs = re.split(r"(?m)^(?=## )", mdp.read_text(encoding="utf-8"))
     keep, skip = [], []
     dirs = {str(Path(x).parent) for x in paths}
     kw = {k for a in areas for ar in pol["areas"] if ar["area"] == a for k in ar["keywords"] if len(k) > 3}
     for s in secs[1:]:
         d = s.splitlines()[0][3:].split(" (")[0].rstrip("/")
         if d == "Notes": keep.append(("codemap", "CODEMAP Notes", s.strip(), "notes")); continue
-        if d in dirs: keep.append(("codemap", f"CODEMAP {d}/", s.strip(), "touched dir"))
-        elif any(k in d.lower() for k in kw): keep.append(("codemap", f"CODEMAP {d}/", s.strip(), "area keyword in dir"))
+        if d in dirs: keep.append(("codemap", f"CODEMAP {d}/", s.strip(), "touched dir (legacy CODEMAP.md)"))
+        elif any(k in d.lower() for k in kw): keep.append(("codemap", f"CODEMAP {d}/", s.strip(), "area keyword in dir (legacy CODEMAP.md)"))
         else: skip.append((f"CODEMAP {d}/", "unrelated dir"))
     return keep, skip
 
@@ -214,6 +244,7 @@ def main():
     if not areas: warnings.append("no area matched (no tags/keywords): only STATE, touched CODEMAP and golden by path")
     risk = classify(mode=a.mode, paths=allp, areas=list(areas), extra_globs=extra_globs(), task=a.task)
     mode = risk["mode"]; warnings += risk["warnings"]
+    auto = classify(paths=allp, areas=list(areas), extra_globs=extra_globs(), task=a.task)["mode"]  # classifierMode (no explicit floor)
     cap = pol["budgets"][mode]; ncards = pol.get("maxCards", {}).get(mode, 3)
     cand = {"state": [], "decisions": [], "cards": [], "codemap": [], "golden": []}
     for g in pol["always"]:
@@ -223,7 +254,7 @@ def main():
     ui = is_ui_task(a.task, paths, pol)
     cand["design"] = []
     for k, fn in (("decisions", lambda: decisions(areas, a.task)), ("cards", lambda: cards(kit, areas, a.task, ncards, ui)), ("design", lambda: design(kit, ui)),
-                  ("codemap", lambda: codemap(paths, areas, pol)), ("golden", lambda: golden(kit, paths, a.task, pol, ui))):
+                  ("codemap", lambda: codemap(paths, areas, pol, a.task, pol.get("graphHops", 2), pol.get("maxRelated", 12))), ("golden", lambda: golden(kit, paths, a.task, pol, ui))):
         if k in pol.get("skipKinds", {}).get(mode, []):
             items, sk = fn(); skipped += [(i[1], f"kind '{k}' skipped in {mode}") for i in items] + sk; continue
         items, sk = fn(); cand[k] = items; skipped += sk
@@ -245,13 +276,14 @@ def main():
             "mode": mode, "modeReasons": risk["reasons"], "cap": cap, "used": est(content), "selected": chosen, "skipped": skipped, "warnings": warnings}
     bundle = meta_header(meta) + content
     out = Path(a.out); out.parent.mkdir(parents=True, exist_ok=True); out.write_text(bundle, encoding="utf-8")
-    rep = {"packId": pid, "forgexVersion": meta["forgexVersion"], "policyVersion": meta["policyVersion"], "estimator": "chars/4",
+    tk = tokens.count(bundle)
+    rep = {"packId": pid, "classifierMode": auto, "explicitMode": a.mode, "tokensIn": tk["tokens"], "tokenMethod": tk["method"], "tokenEstimate": tk["estimate"], "forgexVersion": meta["forgexVersion"], "policyVersion": meta["policyVersion"], "estimator": "chars/4",
            "modeReasons": risk["reasons"], "warnings": warnings, "headerTokensEst": est(bundle) - est(content), "mode": mode, "capTokensEst": cap, "usedTokensEst": est(content), "areas": areas, "policy": str(pol_path),
            "kit": str(kit) if kit else None, "loaded": [{"item": l, "tokensEst": t, "why": w} for l, t, w in chosen],
            "skipped": [{"item": l, "why": w} for l, w in skipped], "bundle": str(out)}
     if a.json: print(json.dumps(rep, indent=2, ensure_ascii=False))
     else:
-        print(f"pack {pid} · mode {mode} · {rep['usedTokensEst']}/{cap} est. tokens (chars/4) · areas: {', '.join(areas) or '-'}")
+        print(f"pack {pid} · mode {mode} (classifier {auto}) · bundle {tk['tokens']} tokens ({tk['method']}) · {rep['usedTokensEst']}/{cap} est. tokens (chars/4) · areas: {', '.join(areas) or '-'}")
         for r in risk["reasons"]: print(f"  risk: {r}")
         for x in warnings: print(f"  warning: {x}")
         for l, t, w in chosen: print(f"  + {l:32} {t:5}  {w}")

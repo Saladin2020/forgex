@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/context-policy.schema.json",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "estimate": "chars/4",
   "budgets": { "QUICK": 1200, "STANDARD": 3500, "GUARDED": 7000 },
   "always": ["forgex/STATE.md"],
@@ -8,7 +8,7 @@
   "maxCards": { "QUICK": 1, "STANDARD": 3, "GUARDED": 4 },
   "areas": [
     { "area": "auth", "keywords": ["login", "logout", "auth", "password", "session", "signin", "sign in", "signup", "2fa", "totp", "otp"], "paths": ["**/auth/**", "**/auth*.ts", "**/session*", "**/password*", "**/middleware.ts"] },
-    { "area": "money", "keywords": ["money", "payment", "pay", "loan", "promptpay", "baht", "fee", "split", "refund", "invoice"], "paths": ["**/payment*/**", "**/money*", "**/loan*/**"] },
+    { "area": "money", "keywords": ["money", "payment", "pay", "loan", "promptpay", "baht", "fee", "split", "refund", "invoice", "balance", "ledger", "satang", "ยอด", "เงิน"], "paths": ["**/payment*/**", "**/money*", "**/loan*/**"] },
     { "area": "db", "keywords": ["migration", "migrate", "schema", "table", "column", "drizzle", "database", "sql", "backup"], "paths": ["**/migrations/**", "**/drizzle/**", "**/schema.ts", "**/db/**"] },
     { "area": "approval", "keywords": ["approve", "approval", "maker", "checker", "review"], "paths": ["**/approval*/**"] },
     { "area": "pdf", "keywords": ["pdf", "receipt", "report", "print"], "paths": ["**/pdf/**", "**/*pdf*"] },
@@ -27,6 +27,8 @@
     "test": ["**/*.test.*", "**/*.spec.*", "tests/**", "e2e/**"]
   },
   "goldenMinScore": 2,
+  "graphHops": 2,
+  "maxRelated": 12,
   "skip": ["**/node_modules/**", "**/dist/**", "**/.next/**", "forgex/tasks/**", "**/*.lock", "**/package-lock.json"],
   "skipKinds": { "QUICK": ["golden", "design"] }
 }

@@ -2,8 +2,11 @@
 """FORGEX A/B bench scorer (stdlib only).
   score.py --a <arm A folder> --b <arm B folder> [--results results.csv] [--out report.md] [--no-cmd]
 Runs tasks/checks.json against each arm's final folder (grep / exists / style / cmd checks), reads results.csv
-(arm,task,tokens,rounds,minutes,reexplained,notes) and prints a markdown table with a winner per metric.
-cmd checks run only if the arm has node_modules (else SKIP, not counted)."""
+(arm,task,tokens,rounds,minutes,reexplained,notes + v2.8: tokensIn,tokensOut,tokenSource,classifierMode,actualMode) and prints a markdown table with a winner per metric.
+cmd checks run only if the arm has node_modules (else SKIP, not counted).
+v2.8: "Real tokens" = tokensIn+tokensOut from rows whose tokenSource is cursor-usage/api/manual or a tiktoken count;
+chars/4 rows are listed separately as estimates. False GUARDED = rows with classifierMode GUARDED whose actualMode
+(or the task's expected mode in checks.json when actualMode is blank) is lower; reported as a rate per arm."""
 import argparse, csv, json, re, subprocess, sys
 from pathlib import Path
 for _s in (sys.stdout, sys.stderr):  # Windows consoles (cp874/cp1252): never crash on Thai output
@@ -100,6 +103,18 @@ def main():
         for tid in checks:
             g = lambda arm, k: next((num(r.get(k)) for r in rows if r["arm"].strip().upper() == arm and r["task"].strip().upper() == tid), None)
             L.append(f"| {tid} | " + " | ".join(fmt(g(arm, k)) for k in ("tokens", "rounds", "minutes") for arm in "AB") + " |")
+    if rows:
+        real = lambda r: (r.get("tokenSource") or "").strip().lower() not in ("", "chars/4", "chars/4 estimate", "estimate")
+        tok = lambda r: (num(r.get("tokensIn")) or 0) + (num(r.get("tokensOut")) or 0)
+        L += ["", "## Real tokens + false GUARDED (v2.8)", "", "| Arm | Real tokens (in+out) | Rows real | Estimated tokens (chars/4) | Classified GUARDED | False GUARDED | Rate |", "|---|---:|---:|---:|---:|---:|---:|"]
+        for arm in arms:
+            rs = [r for r in rows if r["arm"].strip().upper() == arm]
+            rr = [r for r in rs if real(r) and tok(r)]; er = [r for r in rs if not real(r) and tok(r)]
+            want = lambda r: (r.get("actualMode") or "").strip().upper() or checks.get((r.get("task") or "").strip().upper(), {}).get("mode", "")
+            g = [r for r in rs if (r.get("classifierMode") or "").strip().upper() == "GUARDED"]
+            fg = [r for r in g if want(r) in ("QUICK", "STANDARD")]
+            L.append(f"| {arm} | {fmt(sum(map(tok, rr))) if rr else '-'} | {len(rr)}/{len(rs)} | {fmt(sum(map(tok, er))) if er else '-'} | {len(g)} | {len(fg)} | {f'{len(fg) / len(g):.0%}' if g else '-'} |")
+        L.append("_Real = from Cursor Usage (Dashboard → Usage) or a tokenizer; chars/4 is only an estimate and never decides a winner._")
     L += ["", "<details><summary>Check details</summary>", "", "| Task | Arm | Check | Result | Note |", "|---|---|---|---|---|", *detail, "", "</details>", "",
           "Verdict rule: B wins only if it passes at least as many checks AND wins on most logged metrics. One run per arm is a signal, not proof; repeat 2-3 times."]
     rep = "\n".join(L) + "\n"

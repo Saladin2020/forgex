@@ -2,7 +2,7 @@
 """FORGEX dual-update release (stdlib + git + node). Never pushes or publishes.
 
   release.py [--sync-to DIR] [--no-sync]
-0. test_risk.py (py/js parity) + test_ctxpack.py scenarios and edge cases
+0. test_risk.py (py/js parity) + test_ctxpack.py scenarios/edge cases + test_context.py (plan, tags, codemap graph, tokens)
 1. build.py: dist/public (privacy-scanned) + dist/personal-<kit>
 2. validate.mjs --dist
 3. sync personal Grok Bot skill to --sync-to (default from config/kit.json "syncTo"), backing up the old copy
@@ -28,6 +28,7 @@ def main():
     a = ap.parse_args()
     run(sys.executable, "tools/test_risk.py")
     run(sys.executable, "tools/test_ctxpack.py")
+    run(sys.executable, "tools/test_context.py")
     run(sys.executable, "tools/validate.py", "--self-test")
     run(sys.executable, "tools/build.py")
     run("node", "tools/validate.mjs", "--dist")

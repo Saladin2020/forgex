@@ -22,9 +22,16 @@ const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const has = (t, k) => /[\u0E01-\u0E59]/.test(k) ? t.includes(k) : new RegExp("(?<![a-z0-9])" + esc(k) + "(?![a-z0-9])").test(t);
 export function writeSignals(task) {
   const t = String(task || "").toLowerCase();
-  let found = Object.fromEntries(Object.entries(RULES.writeSignals).map(([k, kws]) => [k, kws.filter((x) => has(t, x))]).filter(([, v]) => v.length));
-  const ro = RULES.readOnlySignals.filter((x) => has(t, x));
-  if (ro.length) found = Object.fromEntries(Object.entries(found).filter(([k]) => RULES.readOnlyCannotSuppress.includes(k)));
+  const ro = [...RULES.displaySignals, ...RULES.uiSignals].filter((x) => has(t, x));
+  const found = {};
+  for (const [kind, s] of Object.entries(RULES.touchSignals)) {
+    let hits = s.strong.filter((x) => has(t, x));
+    if (!hits.length && !ro.length) {
+      const n = s.nouns.filter((x) => has(t, x)), v = s.verbs.filter((x) => has(t, x));
+      if (n.length && v.length) hits = [...n.slice(0, 2), ...v.slice(0, 1)];
+    }
+    if (hits.length) found[kind] = hits;
+  }
   return [found, ro];
 }
 export function classify({ mode = null, paths = [], areas = [], risk = null, extraGlobs = [], task = "" } = {}) {

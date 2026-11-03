@@ -1,11 +1,11 @@
-# FORGEX v2.7: Lean AI Engineering System
+# FORGEX v2.8: Lean AI Engineering System
 
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 
 FORGEX helps AI coding agents (Cursor, Grok Bot, any agent that reads Markdown) work **fast, correctly and with few tokens**:
-- **Risk modes:** QUICK / STANDARD / GUARDED, sized to risk: QUICK needs no contract; STANDARD/GUARDED get a small machine-checked JSON contract (`tools/scaffold.py`, `tools/validate.py` pure Python or `tools/validate.mjs`). GUARDED only for writing money, schema/migrations, login/authz decisions, or secrets/env.
+- **Risk modes:** QUICK / STANDARD / GUARDED, sized to risk: QUICK needs no contract; STANDARD/GUARDED get a small machine-checked JSON contract (`tools/scaffold.py`, `tools/validate.py` pure Python or `tools/validate.mjs`). GUARDED only when the task really touches auth/session/authz or ledger/balance writes, schema/migrations, or secrets/env; login/money only in UI copy or display stays STANDARD.
 - **Lego blocks:** work is split into blocks with interfaces and built seed-first; seams are checked once.
-- **Context files:** `STATE.md`, `DECISIONS.md`, `CODEMAP.md` per project, so a new chat or bot picks up where the last stopped without re-reading the repo.
+- **Context files:** `STATE.md` (with a saved Plan: `context.py close` before a chat ends, `context.py resume` first in a new one), tagged `DECISIONS.md`, and a sharded JSON CODEMAP with an import graph and symbol index, so a new chat or bot picks up where the last stopped without re-reading the repo.
 - **House kits:** your stack, design, reusable feature cards and golden code examples, so new apps follow your style without retyping it.
 
 New here? Read **[QUICKSTART.md](QUICKSTART.md)**. Thai install guide: [INSTALL-TH.md](INSTALL-TH.md). The spec: [core/FORGEX.md](core/FORGEX.md).
@@ -19,17 +19,18 @@ kits/<name>/    filled kits (personal or team); never shipped in the public pack
 config/         default-policy.json, kit.example.json (copy to kit.json to pick your kit)
 schemas/ examples/ targets/cursor/ extras/
 bench/          A/B test kit: FORGEX vs no FORGEX (README in Thai, tasks, starter, score.py)
-tools/          scaffold.py, context.py, codemap.py, ctxpack.py, validate.py, validate.mjs, build.py, release.py, test_*.py, hooks/
+tools/          scaffold.py, context.py, codemap.py, ctxpack.py, tokens.py, validate.py, validate.mjs, build.py, release.py, test_*.py, hooks/
 ```
 
 ## Commands
 ```bash
 npm install && npm run build     # builds dist/public and dist/personal-<kit>, privacy-scans public, validates both
 python3 tools/build.py --public-only
-python3 tools/context.py init | decide "<d>" --why "<w>" --alt "<x>"
-python3 tools/codemap.py [root] --max-lines 200
+python3 tools/context.py init | decide "<d>" --why "<w>" --tag <area> | close --now "<status>" --next "<step>" | resume | check
+python3 tools/codemap.py [root]                  # forgex/codemap/*.json; codemap.py related <file> | symbol <name>
+python3 tools/tokens.py log --task T --classifier-mode M --actual-mode M [--tokens-in N --tokens-out N --source cursor-usage] | report
 python3 tools/ctxpack.py "<task>" --path <file>   # context pack, run before coding
-python3 tools/test_risk.py && python3 tools/test_ctxpack.py
+python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py
 python3 tools/release.py         # tests + build + scan + validate + local commit (never pushes)
 ```
 
@@ -38,7 +39,7 @@ python3 tools/release.py         # tests + build + scan + validate + local commi
 - `dist/personal-<kit>/`: the same plus your kit at `references/kit/`. Keep it private.
 
 ## Roadmap
-- v2.7 better retrieval (dependency-aware selection, explainable relevance scoring). v2.8 measurement (tokenizer adapter, local feedback JSONL). No vector DB. See core/FORGEX.md §11.
+- v2.8 shipped the import graph, symbol index, sharded CODEMAP and token measurement. Next: tune risk signals from bench numbers. No vector DB, no heavy ceremony. See core/FORGEX.md §11.
 
 ## License
 MIT, © FORGEX contributors. See [LICENSE](LICENSE).

@@ -22,6 +22,8 @@
     "areas": { "type": "array", "minItems": 1, "items": { "type": "object", "additionalProperties": false, "required": ["area", "keywords", "paths"],
       "properties": { "area": { "type": "string", "pattern": "^[a-z0-9-]+$" }, "keywords": { "type": "array", "items": { "type": "string" } }, "paths": { "$ref": "#/$defs/globs" } } } },
     "goldenByKind": { "type": "object", "additionalProperties": { "$ref": "#/$defs/globs" } },
+    "graphHops": { "type": "integer", "minimum": 0, "maximum": 3, "description": "v2.8: import-graph hops for related files (default 2)." },
+    "maxRelated": { "type": "integer", "minimum": 0, "description": "v2.8: max related files listed from the graph (default 12)." },
     "goldenMinScore": { "type": "integer", "minimum": 0, "description": "Golden example kept only if 3*touched-path matches + kind words in task >= this." },
     "skip": { "$ref": "#/$defs/globs" },
     "skipKinds": { "type": "object", "additionalProperties": { "type": "array", "items": { "$ref": "#/$defs/kind" } } }

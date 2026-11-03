@@ -80,7 +80,7 @@ def edge(root, kit):
     check("edge explicit STANDARD never downgraded", r["mode"] == "STANDARD")
     r = pack(root, kit, "rename css class", "--mode", "GUARDED", "--path", "src/app/globals.css")
     check("edge explicit GUARDED kept + GUARDED cap", r["mode"] == "GUARDED" and r["capTokensEst"] == 7000)
-    r = pack(root, kit, "login page pdf receipt with push reminder", "--path", "src/app/login/page.tsx", "--path", "src/lib/pdf/receipt.tsx", "--path", "src/server/push.ts")
+    r = pack(root, kit, "login page pdf receipt with push reminder", "--mode", "GUARDED", "--path", "src/app/login/page.tsx", "--path", "src/lib/pdf/receipt.tsx", "--path", "src/server/push.ts")
     L = [x["item"] for x in r["loaded"]]
     check("edge multi-area: auth+pdf+notify all matched", {"auth", "pdf", "notify"} <= set(r["areas"]), str(list(r["areas"])))
     check("edge multi-area: one core card per area", {"card password-auth", "card thai-pdf", "card web-push"} <= set(L), str(L))
@@ -123,7 +123,7 @@ def main():
         root = Path(t); kit = Path(kit_arg).resolve() if kit_arg else fixture(root)
         if kit_arg: fixture(root)
         base = full(root, kit); print(f"load-everything baseline: {base} est. tokens (chars/4)")
-        r = pack(root, kit, "fix login", "--path", "src/app/login/page.tsx")
+        r = pack(root, kit, "fix login: verify password hash", "--path", "src/app/login/page.tsx")
         L = [x["item"] for x in r["loaded"]]
         print(f"[fix login] {r['mode']} {r['usedTokensEst']}/{r['capTokensEst']} est. · loaded {L}")
         check("login: GUARDED", r["mode"] == "GUARDED")
@@ -147,7 +147,7 @@ def main():
         check("api: golden api-route", "golden api-route" in L)
         check("api: money core card money-math", "card money-math" in L)
         check("api: within cap", r["usedTokensEst"] <= r["capTokensEst"])
-        r = pack(root, kit, "fix login", "--mode", "QUICK", "--path", "src/app/login/page.tsx")
+        r = pack(root, kit, "fix login: verify password hash", "--mode", "QUICK", "--path", "src/app/login/page.tsx")
         print(f"[explicit QUICK on auth] {r['mode']} {r['usedTokensEst']}/{r['capTokensEst']} est., reasons {r['modeReasons']}")
         check("edge auth path: explicit QUICK escalated to GUARDED", r["mode"] == "GUARDED" and any("escalated" in x for x in r["modeReasons"]))
         check("cap never exceeded + skips explained", r["usedTokensEst"] <= r["capTokensEst"] and all(s["why"] for s in r["skipped"]))
