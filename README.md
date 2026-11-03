@@ -1,4 +1,4 @@
-# FORGEX v2.8: Lean AI Engineering System
+# FORGEX v2.9: Lean AI Engineering System
 
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 
@@ -30,7 +30,10 @@ python3 tools/context.py init | decide "<d>" --why "<w>" --tag <area> | close --
 python3 tools/codemap.py [root]                  # forgex/codemap/*.json; codemap.py related <file> | symbol <name>
 python3 tools/tokens.py log --task T --classifier-mode M --actual-mode M [--tokens-in N --tokens-out N --source cursor-usage] | report
 python3 tools/ctxpack.py "<task>" --path <file>   # context pack, run before coding
-python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py
+python3 tools/forgex.py plan "<goal>" | plan --check | next | slice done <id> [--check-cmd "<test>"]   # light roadmap (>3 slices only)
+python3 tools/forgex.py harvest <slice-id> [--confirm <draft> --kit kits/<you>]   # suggest kit cards; human confirms, personal kit only
+python3 tools/forgex.py style capture <image-or-url...>   # draft style.json, DESIGN.md, ui cards, visual checklist
+python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py && python3 tools/test_plan.py
 python3 tools/release.py         # tests + build + scan + validate + local commit (never pushes)
 ```
 
@@ -39,7 +42,7 @@ python3 tools/release.py         # tests + build + scan + validate + local commi
 - `dist/personal-<kit>/`: the same plus your kit at `references/kit/`. Keep it private.
 
 ## Roadmap
-- v2.8 shipped the import graph, symbol index, sharded CODEMAP and token measurement. Next: tune risk signals from bench numbers. No vector DB, no heavy ceremony. See core/FORGEX.md §11.
+- v2.9 adds light planning (`forgex/roadmap.json` + `ROADMAP.md`), harvest drafts and style capture. Next: tune risk signals from bench numbers. No vector DB, no heavy ceremony. See core/FORGEX.md §11–12.
 
 ## License
 MIT, © FORGEX contributors. See [LICENSE](LICENSE).

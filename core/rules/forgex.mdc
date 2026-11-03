@@ -1,5 +1,5 @@
 ---
-description: FORGEX v2.8 lean workflow (fast, correct, few tokens, machine-checked)
+description: FORGEX v2.9 lean workflow (fast, correct, few tokens, machine-checked)
 alwaysApply: true
 ---
 # FORGEX (lean)
@@ -7,7 +7,7 @@ alwaysApply: true
 - New chat or "continue": `context.py resume` first, then Plan step 1.
 - Before coding run `ctxpack.py "<task>" --path <file>` (forgex skill), read only `forgex/context-pack.md`, and say `context: pack <id> · <MODE> · <used>/<cap>`. No Python: follow the skill's manual fallback and say so.
 - STANDARD/GUARDED get the JSON contract from `scaffold.py <mode>` (fill values, `validate.py`). QUICK: no contract, no STATE.
-- Design before you build. Split the work into small blocks, each with its own check, and start with the smallest working seed.
+- Design before you build: small blocks, each with its own check, smallest seed first. New project/feature with >3 slices: `forgex.py plan`, then `next` / `slice done <id>`; QUICK and single tasks skip it.
 - Make the smallest change. Run `git status` first and never touch user work. Build only REQUIRED work; note other ideas in one line.
 - Read only the files you need. Do not rerun a check that has not changed, and do not repeat summaries.
 - Never claim a check you did not run. Tests count only if they call the real code. First slice must walk the real user path end to end.

@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.9.0 (2026-11-03): light planning, harvest, style capture
+- Planning: `core/templates/ROADMAP.md` + `tools/roadmap.py` via `tools/forgex.py`. `forgex.py plan "<goal>"` writes `forgex/roadmap.json` + `forgex/ROADMAP.md` (3-5 milestones with outcomes; slices of 1-3 files, own test, `dependsOn`, mode from the risk classifier, never lower). `plan --check` rejects placeholders, cycles, >3 files, missing deps/tests, ≤3 slices, wrong milestone count, a non-walkable first slice. `forgex.py next` writes the ready slice into STATE Plan; `slice done <id> --check-cmd` marks done only if the test passes. Only for >3 slices; QUICK/single tasks skip it.
+- ctxpack: new `roadmap` kind loads only the current + next slice (skipped in QUICK; policy priority + schema updated).
+- Harvest: `forgex.py harvest <id>` drafts kit cards from a done slice's exports into `forgex/harvest/`; `--confirm <draft> --kit <personal kit>` copies one into `blocks/` + INDEX. Never automatic, refuses core/house or any folder without kit.json/private-terms.txt.
+- Style capture: `forgex.py style capture <image-or-url...>` → `forgex/style/style.draft.json` (color, spacing, radius, shadow, type, motion: shimmer, stagger, reduced motion), `DESIGN.draft.md`, `CHECKLIST.md`, cards `ui-skeleton-list`, `ui-empty-state`, `ui-data-table` (runnable tsx + rules). URLs: declared CSS variables from the page + up to 5 same-origin stylesheets (no browser, no computed styles). Images: template + agent fill steps. Principles only, never logos/assets/code.
+- Tests: new `tools/test_plan.py` (real tools on a temp repo, run by `release.py`).
+
 ## v2.8.0 (2026-11-03): real-touch risk, saved plans, tags, graph CODEMAP, real tokens
 Credit: owner's priority list after the v2.7 bench (fix false GUARDED → plan into STATE → tags + CODEMAP/graph → real tokens).
 - Risk: `writeSignals` replaced by `touchSignals` (per kind: `strong` phrases, or `nouns` AND `verbs`; nouns alone never escalate). Display/UI words (`displaySignals`, `uiSignals`: show, dashboard, button, styling, css, label, แสดง, ปุ่ม…) cancel noun+verb hits, never strong ones or schema-change. New real-touch globs: `**/ledger/**`, `**/*ledger*.*`, `**/session/**`, `**/*session*.ts`. "login page styling", "members page with login button", "show balance on dashboard", "fix login" on a page → STANDARD; TOTP/2FA, hash password, verify session, role enforce, maker-checker, post to ledger, debit, update balance → GUARDED. 67 py/js parity cases (35 new, EN+TH).

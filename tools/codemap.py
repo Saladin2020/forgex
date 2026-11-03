@@ -26,7 +26,7 @@ JSDEF = re.compile(r"^(?:async\s+)?(?:function\*?|class)\s+([A-Za-z_$][\w$]*)", 
 PYDEF = re.compile(r"^(?:async\s+)?(?:def|class)\s+([A-Za-z_]\w*)", re.M)
 JSIMP = re.compile(r"""(?:import\s+(?:[\w*{}\s,$]+\s+from\s+)?|export\s+[\w*{}\s,$]+\s+from\s+|require\(\s*|import\(\s*)["']([^"']+)["']""")
 PYIMP = re.compile(r"^\s*(?:from\s+(\.*[\w.]*)\s+import\s+([\w, *]+)|import\s+([\w., ]+))", re.M)
-VERSION = "2.8.0"
+VERSION = "2.9.0"
 
 def files(root):
     try: out = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True, encoding="utf-8", check=True).stdout.splitlines()

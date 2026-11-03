@@ -45,6 +45,7 @@ mkdir -p .cursor/skills && cp -r forgex/skills/forgex .cursor/skills/
 2. (ไม่บังคับ) รัน `npm i -D ajv ajv-formats` ถ้าจะใช้ validate.mjs
 3. ทุกงานเก็บเป็น `forgex/tasks/<id>.json` ระบบ CI ตรวจทุกไฟล์ทุกโหมด และรัน gitleaks ทุกครั้งที่เปิด PR ถ้าต้องการตั้ง guardedGlobs ของโปรเจกต์เอง ให้สร้าง `forgex/policy.json`
 4. แก้ path ในไฟล์ workflow ให้ตรงกับตำแหน่งที่คัดลอกไฟล์ไปวาง
+5. (v2.9) งานใหม่ที่มีมากกว่า 3 slice: รัน `python3 tools/forgex.py plan "<เป้าหมาย>"` เติม `forgex/roadmap.json` แล้ว `plan --check` และ `next` เพื่อเขียน slice ถัดไปลง STATE ทำเสร็จใช้ `slice done <id> --check-cmd "<test>"` ส่วน `forgex.py harvest <id>` แค่ร่างการ์ด ต้องยืนยันเองและเข้า kit ส่วนตัวเท่านั้น และ `forgex.py style capture <รูปหรือ URL>` ร่าง style/DESIGN/การ์ด UI (ลอกแค่หลักการ ห้ามลอกโลโก้ รูป หรือโค้ด)
 
 ## ตรวจแพ็กเกจเอง
 ```bash

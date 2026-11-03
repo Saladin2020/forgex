@@ -2,7 +2,7 @@
 name: forgex
 description: Use for a software change done FORGEX-style (fast, correct, few tokens). Covers picking QUICK/STANDARD/GUARDED, generating and filling the per-mode JSON contract, Lego blocks built seed-first, seam checks, validating, closing with a rendered report and one pattern line, starting a new web app from a house kit (profile, design, block cards, golden examples), and keeping STATE, DECISIONS and CODEMAP context files.
 ---
-# FORGEX v2.8
+# FORGEX v2.9
 
 `F` = `references/tools`. The spec is `references/FORGEX.md`; read only the section you need. STANDARD and GUARDED use a JSON contract at `forgex/tasks/<taskId>.json`. Generate it with the scaffold, **fill in values only**, and validate it with `python3 F/validate.py <file>` (pure Python) or `node F/validate.mjs <file>` (needs ajv). If neither runs, write one line, `validate: skipped (no python/node)`, and move on; no NOT_RUN ceremony. Never add a check that cannot pass in this environment.
 **Permission:** the task message is permission to build, in every mode including GUARDED. Stop and ask only before deleting data, touching real machines or hardware, or touching secret values.
@@ -19,7 +19,9 @@ description: Use for a software change done FORGEX-style (fast, correct, few tok
 ## NEW WEB APP (read these first, nothing else)
 1. Copy the block in `K/PROFILE.md` into the repo's `AGENTS.md`; pick a look from `K/DESIGN.md` into `DESIGN.md`. Run `context.py init` and `codemap.py`.
 2. `rg -i "<feature>" K/blocks/INDEX.md`, open only matching cards, copy from the cited source. Before writing a page, route, action or test, open the one matching `K/golden/<kind>.md` and mimic its shape.
-3. At project end, harvest per FORGEX.md §7.
+3. More than 3 slices: `forgex.py plan "<goal>"`, fill `forgex/roadmap.json` (3-5 milestones with outcomes, slices of 1-3 files + test + dependsOn, slice 1 walkable), `plan --check`, then `forgex.py next` writes the ready slice into STATE Plan. Finish with `slice done <id> --check-cmd "<test>"`. ctxpack loads only the current + next slice.
+4. Look from a reference: `forgex.py style capture <image-or-url>` → fill `forgex/style/*` drafts; copy principles only, never logos/assets/code.
+5. After a slice: optional `forgex.py harvest <id>`; you confirm each draft into the personal kit only (FORGEX.md §7).
 
 ## QUICK (one file, low risk, reversible)
 1. A short pack read is enough. **No JSON contract, no STATE update.**

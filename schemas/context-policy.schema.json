@@ -9,7 +9,7 @@
     "modes": { "type": "object", "additionalProperties": false, "required": ["QUICK", "STANDARD", "GUARDED"],
       "properties": { "QUICK": { "type": "integer", "minimum": 100 }, "STANDARD": { "type": "integer", "minimum": 100 }, "GUARDED": { "type": "integer", "minimum": 100 } } },
     "globs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "kind": { "enum": ["state", "decisions", "cards", "design", "codemap", "golden"] }
+    "kind": { "enum": ["state", "roadmap", "decisions", "cards", "design", "codemap", "golden"] }
   },
   "properties": {
     "$schema": { "type": "string" },

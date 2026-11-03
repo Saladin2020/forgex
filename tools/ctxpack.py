@@ -196,6 +196,19 @@ def codemap(paths, areas, pol, task="", hops=2, max_related=12):
         else: skip.append((f"CODEMAP {d}/", "unrelated dir"))
     return keep, skip
 
+def roadmap_items():
+    """v2.9: only the current slice + the next ready one from forgex/roadmap.json, never the whole roadmap."""
+    if not Path("forgex/roadmap.json").exists(): return [], []
+    import roadmap as rm
+    try: r = rm.load()
+    except Exception as e: return [], [("roadmap", f"unreadable forgex/roadmap.json ({e})")]
+    cur, nxt = rm.current_and_next(r)
+    if not cur: return [], [("roadmap", "all slices done")]
+    out = [("roadmap", f"roadmap {cur['id']} (current)", rm.slice_text(cur, "Current slice"), "current slice")]
+    if nxt: out.append(("roadmap", f"roadmap {nxt['id']} (next)", rm.slice_text(nxt, "Next slice"), "next ready slice"))
+    rest = len(r["slices"]) - len(out)
+    return out, ([(f"roadmap +{rest} slices", "only current + next are loaded")] if rest else [])
+
 KIND_WORDS = {"form-page": ["page", "form"], "api-route": ["api", "endpoint", "route"], "server-action": ["action", "mutation"], "test": ["test", "spec"]}
 
 def design(kit, ui):
@@ -246,21 +259,21 @@ def main():
     mode = risk["mode"]; warnings += risk["warnings"]
     auto = classify(paths=allp, areas=list(areas), extra_globs=extra_globs(), task=a.task)["mode"]  # classifierMode (no explicit floor)
     cap = pol["budgets"][mode]; ncards = pol.get("maxCards", {}).get(mode, 3)
-    cand = {"state": [], "decisions": [], "cards": [], "codemap": [], "golden": []}
+    cand = {"state": [], "roadmap": [], "decisions": [], "cards": [], "codemap": [], "golden": []}
     for g in pol["always"]:
         for f in sorted(Path(".").glob(g)) or []:
             cand["state"].append(("state", str(f), f.read_text(encoding="utf-8").strip(), "always"))
         if not any(Path(".").glob(g)): skipped.append((g, "missing (run context.py init)"))
     ui = is_ui_task(a.task, paths, pol)
     cand["design"] = []
-    for k, fn in (("decisions", lambda: decisions(areas, a.task)), ("cards", lambda: cards(kit, areas, a.task, ncards, ui)), ("design", lambda: design(kit, ui)),
+    for k, fn in (("roadmap", roadmap_items), ("decisions", lambda: decisions(areas, a.task)), ("cards", lambda: cards(kit, areas, a.task, ncards, ui)), ("design", lambda: design(kit, ui)),
                   ("codemap", lambda: codemap(paths, areas, pol, a.task, pol.get("graphHops", 2), pol.get("maxRelated", 12))), ("golden", lambda: golden(kit, paths, a.task, pol, ui))):
         if k in pol.get("skipKinds", {}).get(mode, []):
             items, sk = fn(); skipped += [(i[1], f"kind '{k}' skipped in {mode}") for i in items] + sk; continue
         items, sk = fn(); cand[k] = items; skipped += sk
     head = f"# FORGEX context pack · {mode} · cap {cap} est. tokens\nTask: {a.task}\nAreas: {', '.join(areas) or '-'}\n"
     used, chosen, body = est(head), [], []
-    prio = list(pol["priority"]) + [k for k in ("design",) if k not in pol["priority"]]
+    prio = list(pol["priority"]) + [k for k in ("roadmap", "design") if k not in pol["priority"]]
     for k in prio:
         for kind, label, text, why in cand.get(k, []):
             block = f"\n---\n## [{label}]\n{text}\n"; t = est(block)
