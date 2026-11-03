@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.10.0 (2026-11-03): feedback loop (rating, review, prune)
+- Rating: `forgex.py rate --scope milestone|project --id <id> first-try|1-2|many|skip` logs `{"kind": "rating"}` into `forgex/log.jsonl`. Asked only when `slice done` closes a milestone or the whole roadmap; never for QUICK (`--scope quick` logs nothing). Skip or no answer logs `rating: null` and exits 0. Off via `"feedback": {"rating": false}` (policy + schema). `tokens.py report` adds rating counts.
+- Review: `forgex.py review [--kit DIR] [--history FILE]` writes `forgex/REVIEW.md` + `review.json`: cards (keep harvest drafts, drafts duplicating kit cards, kit cards to prune), lessons (slices with ≥2 failed `--check-cmd` runs, now counted as `failedChecks`; 1-2/many ratings) with a proposed rule, numbers (tokens/task vs earlier projects from `<kit>/metrics/projects.jsonl`, false-GUARDED cases, ratings), max 3 recommendations. `--accept Rn` / `--skip Rn` per item; accepting only prints the command for kit changes (lessons go to `forgex/LESSONS.md`, numbers to the history file).
+- Prune: `forgex.py prune --kit DIR [--stale-days N]` suggests duplicate cards (≥50% shared words) and stale ones (unused past `staleDays`, unverified `?`; optional `- **Used:** YYYY-MM-DD` on cards). `--confirm <card>` moves one card to `DIR/pruned/` and drops its INDEX line; refuses core/house and non-personal kits; never deletes.
+- Tests: new `tools/test_review.py` (31 checks, real tools on a temp repo + temp kit), run by `release.py`.
+
 ## v2.9.1 (2026-11-03): README docs
 - README: badges, "Why FORGEX" table, commands cheat sheet, and four mermaid diagrams (overview, risk modes, light planning, cross-chat resume). No code changes.
 

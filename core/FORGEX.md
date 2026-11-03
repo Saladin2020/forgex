@@ -95,8 +95,14 @@ Commit all three. They replace re-explaining the project every chat.
 - `forgex.py harvest <id>` drafts kit cards from a done slice into `forgex/harvest/`. A human confirms each with `--confirm <draft> --kit kits/<you>`; never automatic, never into core/house or the public package.
 - `forgex.py style capture <image-or-url...>` writes `forgex/style/` drafts: `style.draft.json` (color, spacing, radius, shadow, type scale, motion: shimmer, stagger, reduced motion), `DESIGN.draft.md`, `CHECKLIST.md`, cards `ui/skeleton-list`, `ui/empty-state`, `ui/data-table` (runnable tsx + rules: skeleton matches the real layout; loading/empty/error/mobile). URLs: declared CSS variables from the page and same-origin stylesheets (no browser, so no computed styles). Images: a template + agent fill steps. Copy principles only, never logos, assets or code verbatim.
 
-## 12. Roadmap (deferred on purpose, to stay lean)
+## 12. Feedback loop (v2.10)
+- Rating only at milestone or project close (`slice done` prints the prompt), never QUICK: `forgex.py rate --scope milestone|project --id <id> first-try|1-2|many|skip`. Skip logs no rating and never blocks. Disable with `"feedback": {"rating": false}`.
+- `forgex.py review --kit kits/<you>` writes `forgex/REVIEW.md`: cards to keep/merge/prune, lessons with a proposed rule, numbers (tokens vs earlier projects, false GUARDED), ≤3 recommendations. Suggest only; the person accepts or skips each (`--accept Rn` / `--skip Rn`).
+- `forgex.py prune --kit kits/<you>` suggests duplicate/stale cards; `--confirm <card>` moves one to `pruned/`. Never automatic, never deletes, personal kit only.
+
+## 13. Roadmap (deferred on purpose, to stay lean)
 - Done in v2.8: import graph (≤2 hops), symbol index, sharded JSON CODEMAP, tokenizer adapter + `forgex/log.jsonl`, classifierMode vs actualMode.
 - Done in v2.9: light roadmap/slices, harvest drafts, style capture.
+- Done in v2.10: end-of-work rating, end-of-project review, prune suggestions.
 - Next: tune `touchSignals` from bench false-GUARDED numbers; SQLite only if JSON shards get slow on very large repos.
 - Not planned: vector DB / embeddings, Spec-Kit-style heavy ceremony. FORGEX stays in the middle: light QUICK path.

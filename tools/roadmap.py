@@ -134,7 +134,14 @@ def cmd_slice(args):
     if not s: sys.exit(f"slice {args[1]} not found")
     if "--check-cmd" in args:
         c = args[args.index("--check-cmd") + 1]; rc = subprocess.run(c, shell=True).returncode
-        if rc: print(f"FAIL  {s['id']}: check failed (exit {rc}); not marked done"); sys.exit(1)
+        if rc:
+            s["failedChecks"] = s.get("failedChecks", 0) + 1; save(r)
+            print(f"FAIL  {s['id']}: check failed (exit {rc}); not marked done"); sys.exit(1)
     s["status"] = "done"; save(r)
     left = [x["id"] for x in r["slices"] if x.get("status") != "done"]
     print(f"done: {s['id']} · left: {', '.join(left) or 'none'} · optional: `forgex.py harvest {s['id']}` (personal kit, you confirm)")
+    import review
+    if not left: t = review.prompt_text("project", r.get("goal", "project")[:40].strip() or "project")
+    elif all(x.get("status") == "done" for x in r["slices"] if x.get("milestone") == s.get("milestone")): t = review.prompt_text("milestone", s.get("milestone"))
+    else: t = ""
+    if t: print(t)

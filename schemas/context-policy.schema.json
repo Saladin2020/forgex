@@ -13,6 +13,7 @@
   },
   "properties": {
     "$schema": { "type": "string" },
+    "feedback": { "type": "object", "additionalProperties": false, "properties": { "rating": { "type": "boolean" }, "review": { "type": "boolean" }, "staleDays": { "type": "integer", "minimum": 1 } } },
     "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "estimate": { "type": "string" },
     "budgets": { "$ref": "#/$defs/modes", "description": "Estimated-token cap per mode (chars/4). QUICK < STANDARD < GUARDED is checked by the validator." },

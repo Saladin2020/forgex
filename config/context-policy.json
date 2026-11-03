@@ -1,6 +1,7 @@
 {
   "$schema": "../schemas/context-policy.schema.json",
-  "version": "2.9.0",
+  "version": "2.10.0",
+  "feedback": { "rating": true, "review": true, "staleDays": 180 },
   "estimate": "chars/4",
   "budgets": { "QUICK": 1200, "STANDARD": 3500, "GUARDED": 7000 },
   "always": ["forgex/STATE.md"],

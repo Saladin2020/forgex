@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
-"""FORGEX command entry (stdlib). Light planning + harvest + style capture (v2.9).
+"""FORGEX command entry (stdlib). Light planning + harvest + style capture (v2.9) + rate/review/prune (v2.10).
 
   forgex.py plan "<goal>" | plan --check | next | slice done <id> [--check-cmd "<cmd>"]
   forgex.py harvest <sliceId> | harvest --confirm <draft> --kit <personal kit dir>
   forgex.py style capture <image-or-url ...> [--out forgex/style] [--no-fetch]
+  forgex.py rate --scope milestone|project --id <id> first-try|1-2|many|skip
+  forgex.py review [--kit DIR] | review --accept <Rn> | --skip <Rn>
+  forgex.py prune --kit DIR | prune --confirm <card> --kit DIR
 Planning is only for new projects/features with >3 slices; QUICK and single tasks skip it.
 """
 import sys
@@ -22,6 +25,8 @@ def main():
         import roadmap; {"plan": roadmap.cmd_plan, "next": roadmap.cmd_next, "slice": roadmap.cmd_slice}[c](rest)
     elif c == "harvest": import harvest; harvest.main(rest)
     elif c == "style": import style; style.main(rest)
+    elif c in ("rate", "review", "prune"):
+        import review; {"rate": review.cmd_rate, "review": review.cmd_review, "prune": review.cmd_prune}[c](rest)
     else: sys.exit(__doc__)
 
 if __name__ == "__main__":

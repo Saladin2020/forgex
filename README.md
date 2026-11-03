@@ -1,6 +1,6 @@
 # FORGEX v2.9: Lean AI Engineering System
 
-![version](https://img.shields.io/badge/version-2.9.1-b4532f) ![license](https://img.shields.io/badge/license-MIT-blue) ![python](https://img.shields.io/badge/python-3.9%2B-3776ab) ![deps](https://img.shields.io/badge/deps-stdlib%20only-2e7d32)
+![version](https://img.shields.io/badge/version-2.10.0-b4532f) ![license](https://img.shields.io/badge/license-MIT-blue) ![python](https://img.shields.io/badge/python-3.9%2B-3776ab) ![deps](https://img.shields.io/badge/deps-stdlib%20only-2e7d32)
 
 **Engineer the Plan. Execute with Precision.** · Small seeds, proven growth.
 
@@ -80,6 +80,27 @@ sequenceDiagram
   B->>B: ctxpack, then continue Plan step 1 only
 ```
 
+## Feedback loop (v2.10)
+At the close of a milestone or the project (never QUICK), `slice done` asks for one rating: passed first try, 1-2 fix rounds, or many fixes. Skipping logs "no rating" and never blocks; turn it off with `"feedback": {"rating": false}` in `forgex/context-policy.json`. Then `forgex.py review` writes `forgex/REVIEW.md`:
+
+| Section | What it suggests |
+|---|---|
+| Cards | harvest drafts to keep, drafts that duplicate a kit card, duplicate or stale kit cards to prune |
+| Lessons | slices whose check failed twice or more, low ratings, and a proposed rule for each |
+| Numbers | tokens per task versus earlier projects, false-GUARDED cases, ratings |
+| Top recommendations | at most 3 |
+
+Everything is a suggestion. You accept or skip each item; kit changes happen only when you run the printed command, and `prune --confirm` moves a card to `pruned/` instead of deleting it.
+
+```mermaid
+flowchart LR
+  A[slice done closes milestone] --> B[rate: one choice or skip]
+  B --> C[forgex.py review]
+  C --> D[REVIEW.md suggestions]
+  D -->|accept| E[you run the printed command]
+  D -->|skip| F[nothing changes]
+```
+
 ## Commands cheat sheet
 | Goal | Command |
 |---|---|
@@ -91,9 +112,12 @@ sequenceDiagram
 | Plan a feature | `python3 tools/forgex.py plan "<goal>"` · `plan --check` · `next` · `slice done <id> --check-cmd "<test>"` |
 | Harvest kit cards | `python3 tools/forgex.py harvest <slice-id>` · `--confirm <draft> --kit kits/<you>` |
 | Capture a look | `python3 tools/forgex.py style capture <image-or-url...>` |
+| Rate a closed milestone/project | `python3 tools/forgex.py rate --scope milestone\|project --id <id> first-try\|1-2\|many\|skip` |
+| End-of-project review | `python3 tools/forgex.py review --kit kits/<you>` · `--accept Rn` · `--skip Rn` |
+| Prune duplicate/stale cards | `python3 tools/forgex.py prune --kit kits/<you>` · `--confirm <card> --kit kits/<you>` |
 | Token log and report | `python3 tools/tokens.py log …` · `report` |
 | Build both packages | `npm install && npm run build` or `python3 tools/build.py --public-only` |
-| All tests | `python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py && python3 tools/test_plan.py` |
+| All tests | `python3 tools/test_risk.py && python3 tools/test_ctxpack.py && python3 tools/test_context.py && python3 tools/test_plan.py && python3 tools/test_review.py` |
 | Release locally (never pushes) | `python3 tools/release.py` |
 
 ## Layout
@@ -113,7 +137,8 @@ tools/          scaffold.py, context.py, codemap.py, ctxpack.py, tokens.py, vali
 - `dist/personal-<kit>/`: the same plus your kit at `references/kit/`. Keep it private.
 
 ## Roadmap
-- v2.9 adds light planning (`forgex/roadmap.json` + `ROADMAP.md`), harvest drafts and style capture. Next: tune risk signals from bench numbers. No vector DB, no heavy ceremony. See core/FORGEX.md §11–12.
+- v2.10 adds the feedback loop: end-of-work rating, `forgex.py review`, and `prune` suggestions.
+- v2.9 adds light planning (`forgex/roadmap.json` + `ROADMAP.md`), harvest drafts and style capture. Next: tune risk signals from bench numbers. No vector DB, no heavy ceremony. See core/FORGEX.md §11–13.
 
 ## License
 MIT, © FORGEX contributors. See [LICENSE](LICENSE).

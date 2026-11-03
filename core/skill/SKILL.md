@@ -22,6 +22,7 @@ description: Use for a software change done FORGEX-style (fast, correct, few tok
 3. More than 3 slices: `forgex.py plan "<goal>"`, fill `forgex/roadmap.json` (3-5 milestones with outcomes, slices of 1-3 files + test + dependsOn, slice 1 walkable), `plan --check`, then `forgex.py next` writes the ready slice into STATE Plan. Finish with `slice done <id> --check-cmd "<test>"`. ctxpack loads only the current + next slice.
 4. Look from a reference: `forgex.py style capture <image-or-url>` → fill `forgex/style/*` drafts; copy principles only, never logos/assets/code.
 5. After a slice: optional `forgex.py harvest <id>`; you confirm each draft into the personal kit only (FORGEX.md §7).
+6. When `slice done` says a milestone/project closed: ask the person ONE question (passed first try / 1-2 fix rounds / many fixes / skip) and log it with `forgex.py rate`; never ask for QUICK, never block on it. Then `forgex.py review --kit K` and show REVIEW.md; act only on items they accept (`review --accept Rn`). Card pruning: `forgex.py prune`, confirmed per card (FORGEX.md §12).
 
 ## QUICK (one file, low risk, reversible)
 1. A short pack read is enough. **No JSON contract, no STATE update.**

@@ -67,10 +67,11 @@ def main():
         print(json.dumps(e, ensure_ascii=False))
     else:
         rows = [json.loads(x) for x in Path(a.log).read_text(encoding="utf-8").splitlines() if x.strip()] if Path(a.log).exists() else []
-        real = [x for x in rows if not x.get("tokenEstimate")]; fg, g = false_guarded(rows)
+        real = [x for x in rows if not x.get("tokenEstimate") and x.get("kind") != "rating"]; fg, g = false_guarded(rows)
         tot = lambda rs: sum((x.get("tokensIn") or 0) + (x.get("tokensOut") or 0) for x in rs)
-        print(json.dumps({"entries": len(rows), "realTokenEntries": len(real), "realTokens": tot(real), "estimatedTokens": tot([x for x in rows if x.get("tokenEstimate")]),
-                          "falseGuarded": fg, "classifiedGuarded": g, "falseGuardedRate": round(fg / g, 3) if g else None}, indent=1))
+        print(json.dumps({"entries": len([x for x in rows if x.get("kind") != "rating"]), "realTokenEntries": len(real), "realTokens": tot(real), "estimatedTokens": tot([x for x in rows if x.get("tokenEstimate")]),
+                          "falseGuarded": fg, "classifiedGuarded": g, "falseGuardedRate": round(fg / g, 3) if g else None,
+                          "ratings": {k: sum(1 for x in rows if x.get("kind") == "rating" and (x.get("rating") or "skip") == k) for k in ("first-try", "1-2", "many", "skip")}}, indent=1))
 
 if __name__ == "__main__":
     main()

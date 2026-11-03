@@ -25,7 +25,7 @@ def references(dst: Path, kit: Path | None):
     shutil.copytree(ROOT / "schemas", dst / "schemas")
     (dst / "config").mkdir(); shutil.copy(ROOT / "config/default-policy.json", dst / "config"); shutil.copy(ROOT / "config/context-policy.json", dst / "config")
     (dst / "tools").mkdir()
-    for f in ("validate.mjs", "scaffold.py", "context.py", "codemap.py", "ctxpack.py", "tokens.py", "forgex.py", "roadmap.py", "harvest.py", "style.py", "test_risk.py", "validate.py"): shutil.copy(ROOT / "tools" / f, dst / "tools")
+    for f in ("validate.mjs", "scaffold.py", "context.py", "codemap.py", "ctxpack.py", "tokens.py", "forgex.py", "roadmap.py", "harvest.py", "style.py", "review.py", "test_risk.py", "validate.py"): shutil.copy(ROOT / "tools" / f, dst / "tools")
     shutil.copytree(ROOT / "extras", dst / "extras")
     shutil.copytree(ROOT / "tools/hooks", dst / "tools/hooks")
     shutil.copytree(ROOT / "tools/vendor", dst / "tools/vendor")
